@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Co-piloto — Europalco</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#F2C200">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Co-piloto">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="apple-touch-startup-image" href="icons/icon-512.png">
+
+  <!-- Service Worker registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(r => console.log('SW registered'))
+          .catch(e => console.log('SW error', e));
+      });
+    }
+  </script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --yellow: #F2C200;
+    --yellow-dim: rgba(242,194,0,0.15);
+    --yellow-mid: rgba(242,194,0,0.45);
+    --yellow-dark: #8A6E00;
+    --bg: #FFFFFF;
+    --bg2: #FAFAF8;
+    --bg3: #F2F0EB;
+    --border: rgba(0,0,0,0.09);
+    --text: #111111;
+    --text-dim: rgba(17,17,17,0.4);
+    --text-mid: rgba(17,17,17,0.62);
+    --green: #1E7A4A;
+    --red: #C0392B;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow: hidden; -webkit-font-smoothing: antialiased; }
+
+  .screen { position: absolute; inset: 0; display: flex; flex-direction: column; transition: opacity 0.3s, transform 0.3s; }
+  .screen.hidden { opacity: 0; pointer-events: none; transform: translateY(10px); }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 52px 20px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .logo { font-family: var(--sans); font-weight: 800; font-size: 13px; letter-spacing: 0.18em; color: #111; }
+  .event-name { font-family: var(--mono); font-size: 11px; color: var(--text-dim); max-width: 150px; text-align: right; line-height: 1.4; }
+
+  /* CLOCK BAR */
+  .clock-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; background: var(--yellow); border-bottom: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+  .clock { font-family: var(--mono); font-size: 28px; font-weight: 500; color: #111; letter-spacing: -0.02em; }
+  .next-item { text-align: right; }
+  .next-label { font-family: var(--mono); font-size: 9px; color: rgba(0,0,0,0.45); letter-spacing: 0.12em; text-transform: uppercase; }
+  .next-value { font-family: var(--sans); font-size: 13px; font-weight: 600; color: #111; margin-top: 2px; }
+  .next-time { font-family: var(--mono); font-size: 10px; color: rgba(0,0,0,0.45); margin-top: 1px; }
+
+  /* SYNC BAR */
+  .sync-bar { display: flex; align-items: center; justify-content: space-between; padding: 7px 20px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .sync-status { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; transition: background 0.3s; }
+  .sync-dot.ok { background: var(--green); box-shadow: 0 0 6px rgba(30,122,74,0.4); }
+  .sync-dot.err { background: var(--red); }
+  .sync-dot.loading { background: var(--yellow-dark); animation: blink 1s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:0.3} 50%{opacity:1} }
+  .sync-btn { font-family: var(--mono); font-size: 9px; color: var(--yellow-dark); cursor: pointer; padding: 3px 8px; border: 1px solid var(--yellow-mid); border-radius: 4px; background: var(--yellow-dim); letter-spacing: 0.06em; }
+
+  /* NAV TABS */
+  .nav-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .nav-tab { flex: 1; padding: 11px 6px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-align: center; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; text-transform: uppercase; -webkit-tap-highlight-color: transparent; }
+  .nav-tab.active { color: var(--yellow-dark); border-bottom-color: var(--yellow); font-weight: 500; }
+
+  /* CONTEXT PILL */
+  .context-pill { margin: 12px 16px 0; padding: 9px 12px; background: var(--yellow-dim); border: 1px solid var(--yellow-mid); border-radius: 8px; display: flex; align-items: flex-start; gap: 8px; flex-shrink: 0; }
+  .context-pill p { font-family: var(--mono); font-size: 11px; color: var(--yellow-dark); line-height: 1.5; }
+
+  /* CONVERSATION */
+  .conversation { flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+  .conversation::-webkit-scrollbar { display: none; }
+  .msg { display: flex; flex-direction: column; gap: 3px; max-width: 88%; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.ai { align-self: flex-start; align-items: flex-start; }
+  .msg-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; }
+  .bubble { padding: 10px 13px; border-radius: 12px; font-family: var(--sans); font-size: 14px; line-height: 1.55; }
+  .msg.user .bubble { background: var(--bg3); border: 1px solid var(--border); color: var(--text-mid); border-bottom-right-radius: 3px; font-family: var(--mono); font-size: 12px; font-style: italic; }
+  .msg.ai .bubble { background: var(--bg2); border: 1px solid rgba(242,194,0,0.35); color: var(--text); border-bottom-left-radius: 3px; }
+  .msg-time { font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+
+  /* THINKING */
+  .thinking { display: flex; align-items: center; gap: 6px; padding: 10px 13px; }
+  .thinking span { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+  .dots { display: flex; gap: 4px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--yellow); opacity: 0.4; animation: pulse 1.2s ease-in-out infinite; }
+  .dot:nth-child(2){animation-delay:0.2s} .dot:nth-child(3){animation-delay:0.4s}
+  @keyframes pulse { 0%,100%{opacity:0.2;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
+
+  /* BOTTOM BAR */
+  .bottom-bar { padding: 14px 16px 34px; background: var(--bg); border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 12px; flex-shrink: 0; }
+  .quick-actions { display: flex; gap: 7px; width: 100%; }
+  .quick-btn { flex: 1; padding: 8px 4px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 9px; color: var(--text-dim); cursor: pointer; text-align: center; line-height: 1.4; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+  .quick-btn:active { background: var(--yellow-dim); color: var(--yellow-dark); border-color: var(--yellow-mid); }
+
+  /* VAD INDICATOR */
+  .vad-bar { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 4px 0; }
+  .vad-cols { display: flex; align-items: center; gap: 3px; height: 40px; }
+  .vad-col { width: 3px; border-radius: 2px; background: var(--border); transition: height 0.07s ease, background 0.2s; min-height: 3px; max-height: 36px; height: 3px; }
+  .vad-col.active { background: var(--yellow); }
+  .vad-status { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  .vad-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; transition: all 0.25s; }
+  .vad-dot.listening { background: var(--green); box-shadow: 0 0 7px rgba(30,122,74,0.5); animation: vad-pulse 2.5s ease-in-out infinite; }
+  .vad-dot.speaking { background: var(--yellow); box-shadow: 0 0 10px rgba(242,194,0,0.55); animation: none; transform: scale(1.2); }
+  .vad-dot.processing { background: #8A6E00; animation: blink 0.5s ease-in-out infinite; }
+  @keyframes vad-pulse { 0%,100%{opacity:0.45;transform:scale(0.85)} 50%{opacity:1;transform:scale(1.1)} }
+  .mic-hint { font-family: var(--mono); font-size: 10px; color: var(--text-dim); letter-spacing: 0.07em; transition: color 0.2s; }
+  .mic-hint.speaking { color: var(--yellow-dark); }
+  .vad-toggle { font-family: var(--mono); font-size: 9px; color: var(--text-dim); cursor: pointer; padding: 4px 9px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg2); letter-spacing: 0.05em; -webkit-tap-highlight-color: transparent; transition: all 0.15s; }
+  .vad-toggle.on { color: var(--green); border-color: rgba(30,122,74,0.3); background: rgba(30,122,74,0.07); }
+
+  /* TIMELINE */
+  .timeline-list { padding: 14px 16px; display: flex; flex-direction: column; gap: 7px; overflow-y: auto; flex: 1; }
+  .timeline-list::-webkit-scrollbar { display: none; }
+  .tl-item { display: flex; gap: 10px; align-items: flex-start; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); }
+  .tl-item.current { border-color: var(--yellow-mid); background: var(--yellow-dim); }
+  .tl-item.done { opacity: 0.38; }
+  .tl-time { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text-dim); min-width: 42px; padding-top: 1px; }
+  .tl-item.current .tl-time { color: var(--yellow-dark); }
+  .tl-title { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; flex: 1; }
+  .tl-marker { font-size: 10px; flex-shrink: 0; padding-top: 2px; color: var(--text-dim); }
+
+  /* EQUIPA TAB */
+  .crew-list { padding: 14px 16px; display: flex; flex-direction: column; gap: 0; overflow-y: auto; flex: 1; }
+  .crew-list::-webkit-scrollbar { display: none; }
+  .crew-section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--text-dim); text-transform: uppercase; padding: 10px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+  .crew-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .crew-item:last-child { border-bottom: none; }
+  .crew-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--text-mid); flex-shrink: 0; }
+  .crew-info { flex: 1; min-width: 0; }
+  .crew-name { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .crew-role { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-top: 1px; }
+  .crew-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex-shrink: 0; }
+  .crew-status { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.06em; }
+  .crew-status.confirmed { background: rgba(30,122,74,0.1); color: var(--green); border: 1px solid rgba(30,122,74,0.2); }
+  .crew-status.pending { background: rgba(242,194,0,0.15); color: var(--yellow-dark); border: 1px solid var(--yellow-mid); }
+  .crew-status.declined { background: rgba(192,57,43,0.1); color: var(--red); border: 1px solid rgba(192,57,43,0.2); }
+  .crew-calltime { font-family: var(--mono); font-size: 9px; color: var(--text-dim); }
+
+  /* TRANSPORT */
+  .transport-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); margin-bottom: 7px; }
+  .transport-icon { width: 28px; height: 28px; background: var(--yellow-dim); border: 1px solid var(--yellow-mid); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .transport-info { flex: 1; }
+  .transport-name { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text); }
+  .transport-detail { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-top: 2px; line-height: 1.5; }
+
+  /* LOG */
+  .log-list { padding: 14px 16px; display: flex; flex-direction: column; gap: 7px; overflow-y: auto; flex: 1; }
+  .log-list::-webkit-scrollbar { display: none; }
+  .log-item { padding: 9px 11px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); }
+  .log-item-time { font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-bottom: 3px; }
+  .log-item-text { font-family: var(--sans); font-size: 13px; color: var(--text-mid); line-height: 1.45; }
+  .log-item-tag { display: inline-block; margin-top: 5px; padding: 2px 6px; border-radius: 4px; font-family: var(--mono); font-size: 9px; background: var(--yellow-dim); color: var(--yellow-dark); border: 1px solid var(--yellow-mid); }
+  .log-empty { font-family: var(--mono); font-size: 12px; color: var(--text-dim); text-align: center; padding: 40px 20px; line-height: 1.6; }
+
+  /* SETUP */
+  .setup-scroll { flex: 1; overflow-y: auto; padding: 20px; }
+  .setup-scroll::-webkit-scrollbar { display: none; }
+  .setup-title { font-family: var(--sans); font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .setup-sub { font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-bottom: 22px; line-height: 1.5; }
+  .section-divider { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; color: var(--text-dim); text-transform: uppercase; padding: 14px 0 10px; border-bottom: 1px solid var(--border); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .section-divider::before { content: ''; display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--yellow); }
+  .field-group { margin-bottom: 14px; }
+  .field-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 5px; display: block; }
+  .field-input { width: 100%; padding: 10px 13px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--mono); font-size: 12px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+  .field-input:focus { border-color: var(--yellow-mid); }
+  .field-input::placeholder { color: var(--text-dim); }
+  textarea.field-input { min-height: 80px; resize: vertical; line-height: 1.5; }
+  .notice { padding: 10px 13px; border-radius: 8px; background: var(--yellow-dim); border: 1px solid var(--yellow-mid); font-family: var(--mono); font-size: 10px; color: var(--yellow-dark); line-height: 1.5; margin-bottom: 16px; }
+  .crewbrain-status { padding: 10px 13px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); font-family: var(--mono); font-size: 11px; color: var(--text-mid); line-height: 1.5; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .btn-primary { width: 100%; padding: 14px; background: var(--yellow); border: none; border-radius: 10px; font-family: var(--sans); font-size: 15px; font-weight: 700; color: #111; cursor: pointer; letter-spacing: 0.02em; transition: opacity 0.2s; -webkit-tap-highlight-color: transparent; }
+  .btn-primary:active { opacity: 0.85; }
+  .btn-secondary { width: 100%; padding: 11px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; font-family: var(--mono); font-size: 12px; color: var(--text-mid); cursor: pointer; letter-spacing: 0.04em; transition: all 0.2s; -webkit-tap-highlight-color: transparent; margin-bottom: 10px; }
+  .btn-secondary:active { background: var(--yellow-dim); border-color: var(--yellow-mid); color: var(--yellow-dark); }
+
+  /* RECORDING OVERLAY */
+  .rec-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(255,255,255,0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .rec-overlay.show { opacity: 1; pointer-events: all; }
+  .rec-wave { display: flex; align-items: center; gap: 5px; height: 48px; }
+  .wave-bar { width: 4px; border-radius: 3px; background: var(--yellow); animation: wave 0.8s ease-in-out infinite; }
+  .wave-bar:nth-child(1){height:16px;animation-delay:0s} .wave-bar:nth-child(2){height:28px;animation-delay:0.1s} .wave-bar:nth-child(3){height:40px;animation-delay:0.2s} .wave-bar:nth-child(4){height:32px;animation-delay:0.3s} .wave-bar:nth-child(5){height:20px;animation-delay:0.4s} .wave-bar:nth-child(6){height:36px;animation-delay:0.15s} .wave-bar:nth-child(7){height:24px;animation-delay:0.25s}
+  @keyframes wave { 0%,100%{transform:scaleY(0.5);opacity:0.5} 50%{transform:scaleY(1.2);opacity:1} }
+  .rec-label { font-family: var(--mono); font-size: 12px; color: var(--yellow-dark); letter-spacing: 0.12em; }
+  .rec-stop { padding: 11px 30px; background: transparent; border: 1.5px solid rgba(0,0,0,0.12); border-radius: 30px; font-family: var(--mono); font-size: 11px; color: var(--text-dim); cursor: pointer; letter-spacing: 0.08em; -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+
+<!-- ══ SETUP ═══════════════════════════════════════════════════════════════════ -->
+<div class="screen" id="screen-setup">
+  <div class="header">
+    <div class="logo">EUROPALCO</div>
+    <div class="event-name">Co-piloto de evento</div>
+  </div>
+  <div class="setup-scroll">
+    <div class="setup-title">Configurar evento</div>
+    <div class="setup-sub">Preenche o contexto manualmente ou sincroniza com o CrewBrain.</div>
+
+    <!-- CrewBrain section -->
+    <div class="section-divider">CrewBrain</div>
+    <div class="field-group">
+      <label class="field-label">URL base da API</label>
+      <input class="field-input" id="cb-url" type="text" placeholder="https://app.crewbrain.net/api" value="https://app.crewbrain.net/api">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Credenciais (Basic Auth — user:password)</label>
+      <input class="field-input" id="cb-auth" type="password" placeholder="utilizador:password">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Event ID do CrewBrain</label>
+      <input class="field-input" id="cb-eventid" type="text" placeholder="ex: 12345">
+    </div>
+    <div class="crewbrain-status" id="cb-status">
+      <span id="cb-status-dot" style="width:7px;height:7px;border-radius:50%;background:var(--text-dim);flex-shrink:0;display:inline-block"></span>
+      <span id="cb-status-text">Não sincronizado</span>
+    </div>
+    <button class="btn-secondary" onclick="syncCrewBrain()">↻ Sincronizar com CrewBrain</button>
+
+    <!-- Event info section -->
+    <div class="section-divider">Evento</div>
+    <div class="field-group">
+      <label class="field-label">Nome do evento</label>
+      <input class="field-input" id="ev-name" type="text" placeholder="ex: DHL Supply Chain — Vilamoura" value="DHL Supply Chain — Vilamoura">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Local / venue</label>
+      <input class="field-input" id="ev-venue" type="text" placeholder="ex: Centro de Congressos, Tivoli Marina" value="Centro de Congressos, Hotel Tivoli Marina Vilamoura">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Data</label>
+      <input class="field-input" id="ev-date" type="text" placeholder="ex: 11 de Abril de 2026" value="11 de Abril de 2026">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Timeline do dia (hora — descrição)</label>
+      <textarea class="field-input" id="ev-timeline">07:00 — Chegada de equipa e briefing de segurança
+08:00 — Descarga de camiões
+09:00 — Pré rigg e rigg (DP Riggers)
+13:00 — Montagem de ledwall e jumbotrone
+15:00 — Cablagem geral AV
+17:00 — Tech rehearsal / soundcheck
+19:00 — Abertura de portas ao público
+20:00 — Início do programa
+23:00 — Fim do evento
+23:30 — Início de desmontagem</textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Equipa manual (se não usar CrewBrain)</label>
+      <textarea class="field-input" id="ev-team" placeholder="Nome — Função — Contacto">Bruno Domingos — GP — 961 026 466
+Filipa Limão — TSST / Segurança — 961 026 280
+Luís Pinto — Responsável Estruturas
+DP Riggers — Rigging externo</textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Protocolos / notas</label>
+      <textarea class="field-input" id="ev-protocols">Em caso de incêndio: avisar GP via rádio, acionar protocolo hotel, usar extintor mais próximo, ponto de encontro exterior.
+Em caso de acidente grave: não mover vítima, contactar Filipa Limão (961 026 280) ou ligar 112.
+EPI obrigatórios: capacete, luvas, colete visibilidade, calçado S3.
+Comunicações via rádio UHF em todas as frentes de trabalho.
+Proibido circular sob cargas suspensas.</textarea>
+    </div>
+
+    <div class="notice">⚡ A IA usa o contexto do CrewBrain (equipa, transportes, confirmações) para responder com precisão durante o evento.</div>
+    <button class="btn-primary" onclick="startEvent()">Iniciar co-piloto</button>
+    <div style="height:28px"></div>
+  </div>
+</div>
+
+<!-- ══ MAIN ════════════════════════════════════════════════════════════════════ -->
+<div class="screen hidden" id="screen-main">
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:7px;height:7px;border-radius:50%;background:#1E7A4A;box-shadow:0 0 6px rgba(30,122,74,0.4)"></div>
+      <div class="logo">CO-PILOTO</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="event-name" id="header-event-name"></div>
+      <button onclick="showSetup()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--mono);font-size:10px;cursor:pointer;padding:4px 7px;border-radius:5px">↩</button>
+    </div>
+  </div>
+
+  <div class="clock-bar">
+    <div class="clock" id="live-clock">--:--</div>
+    <div class="next-item">
+      <div class="next-label">a seguir</div>
+      <div class="next-value" id="next-item-name">—</div>
+      <div class="next-time" id="next-item-time"></div>
+    </div>
+  </div>
+
+  <div class="sync-bar">
+    <div class="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-text">CrewBrain não ligado</span>
+    </div>
+    <div class="sync-btn" onclick="refreshCrewBrain()">↻ atualizar</div>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="switchTab('chat')" id="tab-chat">Chat</div>
+    <div class="nav-tab" onclick="switchTab('timeline')" id="tab-timeline">Timeline</div>
+    <div class="nav-tab" onclick="switchTab('equipa')" id="tab-equipa">Equipa</div>
+    <div class="nav-tab" onclick="switchTab('log')" id="tab-log">Registo</div>
+  </div>
+
+  <!-- TAB CHAT -->
+  <div id="tab-content-chat" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div class="context-pill">
+      <span style="font-size:12px;flex-shrink:0;margin-top:1px">◈</span>
+      <p id="context-text">A analisar contexto do evento...</p>
+    </div>
+    <div class="conversation" id="conversation"></div>
+    <div class="bottom-bar">
+      <div class="quick-actions">
+        <div class="quick-btn" onclick="quickAction('O que vem a seguir na timeline?')">próximo<br>momento</div>
+        <div class="quick-btn" onclick="quickAction('Qual é o protocolo de emergência para este momento?')">protocolo<br>emergência</div>
+        <div class="quick-btn" onclick="quickAction('Quem está confirmado na equipa e quem está pendente?')">estado<br>equipa</div>
+        <div class="quick-btn" onclick="quickAction('Qual é a situação dos transportes e carrinhas?')">trans-<br>portes</div>
+      </div>
+      <div class="vad-bar">
+        <div class="vad-status">
+          <div class="vad-dot" id="vad-dot"></div>
+        </div>
+        <div class="vad-cols" id="vad-cols">
+          <div class="vad-col" id="vc0"></div><div class="vad-col" id="vc1"></div>
+          <div class="vad-col" id="vc2"></div><div class="vad-col" id="vc3"></div>
+          <div class="vad-col" id="vc4"></div><div class="vad-col" id="vc5"></div>
+          <div class="vad-col" id="vc6"></div><div class="vad-col" id="vc7"></div>
+          <div class="vad-col" id="vc8"></div><div class="vad-col" id="vc9"></div>
+          <div class="vad-col" id="vc10"></div><div class="vad-col" id="vc11"></div>
+          <div class="vad-col" id="vc12"></div><div class="vad-col" id="vc13"></div>
+          <div class="vad-col" id="vc14"></div>
+        </div>
+      </div>
+      <div class="mic-hint" id="mic-hint">a iniciar microfone...</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="vad-toggle on" id="vad-toggle" onclick="toggleVAD()">● escuta ativa</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB TIMELINE -->
+  <div id="tab-content-timeline" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+    <div class="timeline-list" id="timeline-list"></div>
+  </div>
+
+  <!-- TAB EQUIPA -->
+  <div id="tab-content-equipa" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+    <div class="crew-list" id="crew-list">
+      <div class="log-empty">Sincroniza com o CrewBrain para ver a equipa.</div>
+    </div>
+  </div>
+
+  <!-- TAB LOG -->
+  <div id="tab-content-log" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+    <div class="log-list" id="log-list">
+      <div class="log-empty">Sem registos ainda.<br>A IA regista ocorrências automaticamente.</div>
+    </div>
+  </div>
+</div>
+
+<!-- VAD mode: no overlay needed -->
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let eventCtx = {};
+let crewData = { staff: [], transports: [], synced: false, lastSync: null };
+let messages = [];
+// VAD state
+let vadActive = false;
+let vadStream = null;
+let vadContext = null;
+let vadAnalyser = null;
+let vadMediaRecorder = null;
+let vadChunks = [];
+let vadSpeaking = false;
+let vadSilenceTimer = null;
+let vadAnimFrame = null;
+const VAD_THRESHOLD = 18;      // RMS threshold to detect speech (0-255)
+const VAD_SILENCE_MS = 1400;   // ms of silence before stopping
+let eventLog = [];
+let timelineItems = [];
+let clockInterval = null;
+let syncInterval = null;
+
+// ── CREWBRAIN API ─────────────────────────────────────────────────────────────
+function getCBHeaders() {
+  const auth = document.getElementById('cb-auth').value.trim();
+  const encoded = btoa(auth);
+  return {
+    'Authorization': `Basic ${encoded}`,
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+}
+
+function getCBBase() {
+  return (document.getElementById('cb-url').value.trim() || 'https://app.crewbrain.net/api').replace(/\/$/, '');
+}
+
+function getCBEventId() {
+  return document.getElementById('cb-eventid').value.trim();
+}
+
+async function syncCrewBrain() {
+  const eventId = getCBEventId();
+  const auth = document.getElementById('cb-auth').value.trim();
+  if (!eventId || !auth) {
+    setCBStatus('err', 'Preenche Event ID e credenciais');
+    return;
+  }
+
+  setCBStatus('loading', 'A sincronizar...');
+  try {
+    // Fetch staff/resources for this event
+    const staffRes = await fetch(`${getCBBase()}/events/${eventId}/resources/allNamesInEvent`, {
+      headers: getCBHeaders()
+    });
+
+    if (!staffRes.ok) throw new Error(`Erro ${staffRes.status}`);
+    const staffData = await staffRes.json();
+
+    // Parse staff — CrewBrain returns array of resource objects
+    crewData.staff = parseCrewBrainStaff(staffData);
+
+    // Try to fetch transports (vehicles) — endpoint may vary
+    try {
+      const transRes = await fetch(`${getCBBase()}/events/${eventId}/transports`, {
+        headers: getCBHeaders()
+      });
+      if (transRes.ok) {
+        const transData = await transRes.json();
+        crewData.transports = parseCrewBrainTransports(transData);
+      }
+    } catch(e) {
+      crewData.transports = [];
+    }
+
+    crewData.synced = true;
+    crewData.lastSync = new Date();
+    const timeStr = `${String(crewData.lastSync.getHours()).padStart(2,'0')}:${String(crewData.lastSync.getMinutes()).padStart(2,'0')}`;
+    setCBStatus('ok', `Sincronizado às ${timeStr} — ${crewData.staff.length} pessoas`);
+
+    // Auto-fill team field from CrewBrain data
+    const teamText = crewData.staff.map(s => `${s.name} — ${s.role}${s.phone ? ' — ' + s.phone : ''}`).join('\n');
+    if (teamText) document.getElementById('ev-team').value = teamText;
+
+  } catch(e) {
+    // Demo mode: simulate realistic CrewBrain data
+    simulateCrewBrainData();
+  }
+}
+
+function parseCrewBrainStaff(data) {
+  // Handle various CrewBrain response formats
+  const items = Array.isArray(data) ? data : (data.resources || data.staff || data.data || []);
+  return items.map(item => ({
+    id: item.id || item.resourceId || Math.random(),
+    name: item.name || item.fullName || `${item.firstName || ''} ${item.lastName || ''}`.trim() || 'Sem nome',
+    role: item.role || item.function || item.jobTitle || item.position || '—',
+    phone: item.phone || item.mobile || item.telephone || '',
+    status: normalizeStatus(item.status || item.confirmationStatus || item.bookingStatus || ''),
+    callTime: item.callTime || item.startTime || item.arrivalTime || '',
+    department: item.department || item.group || '',
+  }));
+}
+
+function normalizeStatus(s) {
+  if (!s) return 'pending';
+  const sl = s.toLowerCase();
+  if (sl.includes('confirm') || sl === 'yes' || sl === '1' || sl === 'accepted') return 'confirmed';
+  if (sl.includes('declin') || sl === 'no' || sl === '0' || sl === 'rejected') return 'declined';
+  return 'pending';
+}
+
+function parseCrewBrainTransports(data) {
+  const items = Array.isArray(data) ? data : (data.transports || data.vehicles || data.data || []);
+  return items.map(item => ({
+    id: item.id || Math.random(),
+    name: item.name || item.vehicle || item.description || 'Viatura',
+    driver: item.driver || item.driverName || '—',
+    departure: item.departure || item.departureTime || item.startTime || '',
+    origin: item.origin || item.from || item.startLocation || '',
+    destination: item.destination || item.to || item.endLocation || '',
+    passengers: item.passengers || item.crew || [],
+    notes: item.notes || item.description || '',
+  }));
+}
+
+function simulateCrewBrainData() {
+  // Realistic demo data based on DHL event
+  crewData.staff = [
+    { id:1, name:'Bruno Domingos', role:'Gestor de Projeto', phone:'961 026 466', status:'confirmed', callTime:'06:30', department:'Produção' },
+    { id:2, name:'Filipa Limão', role:'Técnica de Segurança', phone:'961 026 280', status:'confirmed', callTime:'07:00', department:'Segurança' },
+    { id:3, name:'Luís Pinto', role:'Resp. Estruturas', phone:'', status:'confirmed', callTime:'07:00', department:'Estruturas' },
+    { id:4, name:'Carlos Mendes', role:'Técnico Estruturas', phone:'', status:'confirmed', callTime:'07:00', department:'Estruturas' },
+    { id:5, name:'Rui Santos', role:'Técnico Estruturas', phone:'', status:'confirmed', callTime:'07:00', department:'Estruturas' },
+    { id:6, name:'Pedro Alves', role:'Técnico Estruturas', phone:'', status:'pending', callTime:'07:00', department:'Estruturas' },
+    { id:7, name:'João Ferreira', role:'Técnico Estruturas', phone:'', status:'confirmed', callTime:'07:00', department:'Estruturas' },
+    { id:8, name:'Miguel Costa', role:'Resp. Vídeo', phone:'', status:'confirmed', callTime:'08:00', department:'Vídeo' },
+    { id:9, name:'André Sousa', role:'Técnico Vídeo', phone:'', status:'confirmed', callTime:'08:00', department:'Vídeo' },
+    { id:10, name:'Tiago Lopes', role:'Técnico Vídeo', phone:'', status:'pending', callTime:'08:00', department:'Vídeo' },
+    { id:11, name:'Sara Rodrigues', role:'Resp. Iluminação', phone:'', status:'confirmed', callTime:'08:00', department:'Iluminação' },
+    { id:12, name:'Nuno Carvalho', role:'Técnico Iluminação', phone:'', status:'confirmed', callTime:'08:00', department:'Iluminação' },
+    { id:13, name:'Ricardo Pinto', role:'Resp. Som', phone:'', status:'confirmed', callTime:'08:00', department:'Som' },
+    { id:14, name:'Diogo Martins', role:'Técnico Som', phone:'', status:'confirmed', callTime:'08:00', department:'Som' },
+    { id:15, name:'António Silva', role:'Técnico Som', phone:'', status:'declined', callTime:'08:00', department:'Som' },
+  ];
+  crewData.transports = [
+    { id:1, name:'Carrinha Europalco 1', driver:'Carlos Mendes', departure:'06:00', origin:'Armazém Loulé', destination:'Hotel Tivoli Marina, Vilamoura', passengers:['Luís Pinto','Rui Santos','Pedro Alves'], notes:'Material estruturas — truss + palcos' },
+    { id:2, name:'Carrinha Europalco 2', driver:'Miguel Costa', departure:'06:30', origin:'Armazém Loulé', destination:'Hotel Tivoli Marina, Vilamoura', passengers:['André Sousa','Tiago Lopes','Sara Rodrigues'], notes:'Material AV — vídeo + iluminação' },
+    { id:3, name:'Carrinha Som', driver:'Ricardo Pinto', departure:'07:00', origin:'Armazém Loulé', destination:'Hotel Tivoli Marina, Vilamoura', passengers:['Diogo Martins'], notes:'Sistema de som completo + consola' },
+  ];
+  crewData.synced = true;
+  crewData.lastSync = new Date();
+  const timeStr = `${String(crewData.lastSync.getHours()).padStart(2,'0')}:${String(crewData.lastSync.getMinutes()).padStart(2,'0')}`;
+  setCBStatus('ok', `Demo: ${crewData.staff.length} pessoas, ${crewData.transports.length} carrinhas`);
+  const teamText = crewData.staff.map(s => `${s.name} — ${s.role}${s.phone ? ' — ' + s.phone : ''} [${s.status}]`).join('\n');
+  document.getElementById('ev-team').value = teamText;
+}
+
+function setCBStatus(type, text) {
+  const dot = document.getElementById('cb-status-dot');
+  const txt = document.getElementById('cb-status-text');
+  dot.style.background = type === 'ok' ? '#1E7A4A' : type === 'err' ? '#C0392B' : '#8A6E00';
+  dot.style.boxShadow = type === 'ok' ? '0 0 6px rgba(30,122,74,0.4)' : 'none';
+  if (type === 'loading') dot.style.animation = 'blink 1s ease-in-out infinite';
+  else dot.style.animation = 'none';
+  txt.textContent = text;
+}
+
+function updateSyncBar() {
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-text');
+  if (!crewData.synced) { dot.className = 'sync-dot'; txt.textContent = 'CrewBrain não ligado'; return; }
+  const timeStr = `${String(crewData.lastSync.getHours()).padStart(2,'0')}:${String(crewData.lastSync.getMinutes()).padStart(2,'0')}`;
+  dot.className = 'sync-dot ok';
+  const confirmed = crewData.staff.filter(s => s.status === 'confirmed').length;
+  const pending = crewData.staff.filter(s => s.status === 'pending').length;
+  txt.textContent = `CrewBrain · ${confirmed}✓ ${pending}? · sync ${timeStr}`;
+}
+
+async function refreshCrewBrain() {
+  if (!getCBEventId() || !document.getElementById('cb-auth').value.trim()) {
+    // If in demo mode, refresh demo data
+    if (crewData.synced) { simulateCrewBrainData(); updateSyncBar(); renderCrewTab(); return; }
+    return;
+  }
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot loading';
+  await syncCrewBrain();
+  updateSyncBar();
+  renderCrewTab();
+}
+
+// ── CREW TAB RENDERING ────────────────────────────────────────────────────────
+function renderCrewTab() {
+  const list = document.getElementById('crew-list');
+  if (!crewData.synced || crewData.staff.length === 0) {
+    list.innerHTML = '<div class="log-empty">Sincroniza com o CrewBrain para ver a equipa.</div>';
+    return;
+  }
+
+  // Group by department
+  const depts = {};
+  crewData.staff.forEach(s => {
+    const dept = s.department || 'Geral';
+    if (!depts[dept]) depts[dept] = [];
+    depts[dept].push(s);
+  });
+
+  let html = '';
+
+  // Transports section first
+  if (crewData.transports.length > 0) {
+    html += `<div class="crew-section-title">Transportes / Carrinhas</div>`;
+    crewData.transports.forEach(t => {
+      const pax = Array.isArray(t.passengers) ? t.passengers.join(', ') : (t.passengers || '');
+      html += `
+        <div class="transport-item">
+          <div class="transport-icon">🚐</div>
+          <div class="transport-info">
+            <div class="transport-name">${t.name}</div>
+            <div class="transport-detail">
+              ${t.departure ? `Saída: <strong>${t.departure}</strong> · ` : ''}${t.origin ? `${t.origin}` : ''}<br>
+              ${t.driver ? `Condutor: ${t.driver}` : ''}${pax ? ` · ${pax}` : ''}<br>
+              ${t.notes ? `<em>${t.notes}</em>` : ''}
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Staff by department
+  Object.keys(depts).forEach(dept => {
+    html += `<div class="crew-section-title">${dept}</div>`;
+    depts[dept].forEach(s => {
+      const initials = s.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+      const statusLabel = s.status === 'confirmed' ? 'confirmado' : s.status === 'declined' ? 'recusou' : 'pendente';
+      html += `
+        <div class="crew-item">
+          <div class="crew-avatar">${initials}</div>
+          <div class="crew-info">
+            <div class="crew-name">${s.name}</div>
+            <div class="crew-role">${s.role}${s.phone ? ' · ' + s.phone : ''}</div>
+          </div>
+          <div class="crew-right">
+            <span class="crew-status ${s.status}">${statusLabel}</span>
+            ${s.callTime ? `<span class="crew-calltime">call ${s.callTime}</span>` : ''}
+          </div>
+        </div>`;
+    });
+  });
+
+  list.innerHTML = html;
+}
+
+// ── SETUP → START ─────────────────────────────────────────────────────────────
+function startEvent() {
+  eventCtx = {
+    name: document.getElementById('ev-name').value.trim(),
+    venue: document.getElementById('ev-venue').value.trim(),
+    date: document.getElementById('ev-date').value.trim(),
+    timeline: document.getElementById('ev-timeline').value.trim(),
+    team: document.getElementById('ev-team').value.trim(),
+    protocols: document.getElementById('ev-protocols').value.trim(),
+  };
+
+  parseTimeline();
+  document.getElementById('header-event-name').textContent = eventCtx.name;
+  document.getElementById('screen-setup').classList.add('hidden');
+  document.getElementById('screen-main').classList.remove('hidden');
+
+  updateSyncBar();
+  renderCrewTab();
+  startClock();
+  updateContextPill();
+  addWelcomeMessage();
+
+  // Auto-start VAD
+  setTimeout(startVAD, 400);
+
+  // Auto-refresh CrewBrain every 5 minutes
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(refreshCrewBrain, 5 * 60 * 1000);
+}
+
+function showSetup() {
+  clearInterval(clockInterval);
+  clearInterval(syncInterval);
+  stopVAD();
+  document.getElementById('screen-main').classList.add('hidden');
+  document.getElementById('screen-setup').classList.remove('hidden');
+}
+
+// ── TIMELINE ──────────────────────────────────────────────────────────────────
+function parseTimeline() {
+  timelineItems = [];
+  eventCtx.timeline.split('\n').filter(l => l.trim()).forEach(line => {
+    const m = line.match(/^(\d{1,2}:\d{2})\s*[—\-–]\s*(.+)$/);
+    if (m) timelineItems.push({ time: m[1].trim(), title: m[2].trim() });
+  });
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const list = document.getElementById('timeline-list');
+  const now = getCurrentMinutes();
+  list.innerHTML = '';
+  timelineItems.forEach((item, i) => {
+    const itemMin = timeToMinutes(item.time);
+    const nextMin = i + 1 < timelineItems.length ? timeToMinutes(timelineItems[i+1].time) : 9999;
+    const isCurrent = now >= itemMin && now < nextMin;
+    const isDone = now >= nextMin;
+    const div = document.createElement('div');
+    div.className = 'tl-item' + (isCurrent ? ' current' : '') + (isDone ? ' done' : '');
+    div.innerHTML = `<div class="tl-time">${item.time}</div><div class="tl-title">${item.title}</div><div class="tl-marker">${isCurrent ? '▶' : isDone ? '✓' : ''}</div>`;
+    list.appendChild(div);
+  });
+}
+
+function timeToMinutes(t) { const [h,m] = t.split(':').map(Number); return h*60+m; }
+function getCurrentMinutes() { const n=new Date(); return n.getHours()*60+n.getMinutes(); }
+function getCurrentItem() {
+  const now = getCurrentMinutes();
+  for (let i=0; i<timelineItems.length; i++) {
+    const im = timeToMinutes(timelineItems[i].time);
+    const nm = i+1 < timelineItems.length ? timeToMinutes(timelineItems[i+1].time) : 9999;
+    if (now>=im && now<nm) return { current:timelineItems[i], next:timelineItems[i+1]||null };
+  }
+  return { current:null, next:timelineItems[0]||null };
+}
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function startClock() {
+  function tick() {
+    const n=new Date();
+    document.getElementById('live-clock').textContent = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+    const {next} = getCurrentItem();
+    document.getElementById('next-item-name').textContent = next ? (next.title.length>22?next.title.slice(0,22)+'…':next.title) : '—';
+    document.getElementById('next-item-time').textContent = next ? next.time : '';
+    renderTimeline();
+  }
+  tick();
+  clockInterval = setInterval(tick, 15000);
+}
+
+function updateContextPill() {
+  const {current} = getCurrentItem();
+  document.getElementById('context-text').innerHTML = current
+    ? `<strong>Agora:</strong> ${current.title} (${current.time})`
+    : `<strong>${eventCtx.name}</strong> — ${eventCtx.venue}`;
+}
+
+// ── WELCOME ───────────────────────────────────────────────────────────────────
+function addWelcomeMessage() {
+  const {current, next} = getCurrentItem();
+  const confirmed = crewData.staff.filter(s=>s.status==='confirmed').length;
+  const pending = crewData.staff.filter(s=>s.status==='pending').length;
+  const declined = crewData.staff.filter(s=>s.status==='declined').length;
+
+  let txt = `Co-piloto ativo para **${eventCtx.name}**.\n\n`;
+  if (current) txt += `Agora: **${current.title}** (${current.time}).`;
+  else if (next) txt += `Próximo: **${next.title}** (${next.time}).`;
+
+  if (crewData.synced && crewData.staff.length > 0) {
+    txt += `\n\nEquipa do CrewBrain: **${confirmed} confirmados**, ${pending} pendentes${declined > 0 ? `, ${declined} recusaram` : ''}.`;
+    if (crewData.transports.length > 0) txt += ` **${crewData.transports.length} carrinhas** em rota.`;
+    if (pending > 0 || declined > 0) txt += `\n⚠️ Há ${pending+declined} situações a resolver na equipa.`;
+  }
+
+  txt += `\n\nFala comigo por voz ou usa as ações rápidas.`;
+  addMessage('ai', txt);
+}
+
+// ── SYSTEM PROMPT ─────────────────────────────────────────────────────────────
+function buildSystemPrompt() {
+  const {current, next} = getCurrentItem();
+  const n = new Date();
+  const timeStr = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+
+  const staffSummary = crewData.synced && crewData.staff.length > 0
+    ? crewData.staff.map(s => `${s.name} (${s.role}) — ${s.status}${s.callTime?' call '+s.callTime:''}${s.phone?' tel:'+s.phone:''}`).join('\n')
+    : eventCtx.team;
+
+  const transportSummary = crewData.transports.length > 0
+    ? crewData.transports.map(t => `${t.name}: condutor ${t.driver}, saída ${t.departure} de ${t.origin}${t.passengers?.length?' com '+t.passengers.join(',')+' pax':''}`).join('\n')
+    : 'Sem dados de transporte.';
+
+  const confirmed = crewData.staff.filter(s=>s.status==='confirmed').length;
+  const pending = crewData.staff.filter(s=>s.status==='pending').length;
+  const declined = crewData.staff.filter(s=>s.status==='declined').length;
+
+  return `És o co-piloto de produção do Bruno Domingos, Gestor de Projeto da Europalco. Estás ativo durante um evento ao vivo e o teu papel é ajudá-lo a tomar decisões rápidas, gerir imprevistos e manter o evento a funcionar.
+
+EVENTO: ${eventCtx.name}
+LOCAL: ${eventCtx.venue}
+DATA: ${eventCtx.date}
+HORA ATUAL: ${timeStr}
+MOMENTO ATUAL: ${current ? `${current.title} (${current.time})` : 'Antes do início'}
+PRÓXIMO MOMENTO: ${next ? `${next.title} (${next.time})` : 'Fim do evento'}
+
+TIMELINE COMPLETA:
+${eventCtx.timeline}
+
+EQUIPA (fonte: ${crewData.synced ? 'CrewBrain — sync ' + String(crewData.lastSync?.getHours()).padStart(2,'0') + ':' + String(crewData.lastSync?.getMinutes()).padStart(2,'0') : 'manual'}):
+${staffSummary}
+Resumo: ${confirmed} confirmados, ${pending} pendentes, ${declined} recusaram.
+
+TRANSPORTES / CARRINHAS:
+${transportSummary}
+
+PROTOCOLOS:
+${eventCtx.protocols}
+
+REGISTO DO DIA:
+${eventLog.length > 0 ? eventLog.map(e=>`[${e.time}] ${e.text}`).join('\n') : 'Sem ocorrências registadas.'}
+
+INSTRUÇÕES:
+- Responde sempre em português europeu, de forma concisa e direta — estamos em produção ao vivo.
+- Máximo 3-4 frases. Se precisares de listar, usa pontos curtos.
+- Se o Bruno reportar uma situação, inclui [REGISTO: descrição curta] na resposta.
+- Se houver desvio da timeline, analisa o impacto e sugere um ajuste concreto.
+- Para comunicações à equipa, dá o texto pronto a enviar por rádio ou WhatsApp.
+- Para emergências, cita o protocolo relevante imediatamente.
+- Se perguntarem sobre equipa ou transportes, usa os dados do CrewBrain.
+- Nunca sejas vago. Sê o colega experiente que ele precisa no terreno.`;
+}
+
+// ── QUICK ACTIONS ─────────────────────────────────────────────────────────────
+function quickAction(text) { sendToAI(text); }
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['chat','timeline','equipa','log'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    const c = document.getElementById('tab-content-'+t);
+    c.style.display = t===tab ? 'flex' : 'none';
+    if (t===tab) c.style.flexDirection = 'column';
+  });
+  if (tab==='timeline') renderTimeline();
+  if (tab==='equipa') renderCrewTab();
+}
+
+// ── RECORDING ────────────────────────────────────────────────────────────────
+// ── VAD — VOICE ACTIVITY DETECTION ──────────────────────────────────────────
+async function startVAD() {
+  try {
+    vadStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    vadContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = vadContext.createMediaStreamSource(vadStream);
+    vadAnalyser = vadContext.createAnalyser();
+    vadAnalyser.fftSize = 256;
+    vadAnalyser.smoothingTimeConstant = 0.6;
+    source.connect(vadAnalyser);
+    vadActive = true;
+    setVADState('listening');
+    vadLoop();
+  } catch(e) {
+    setVADState('off');
+    document.getElementById('mic-hint').textContent = 'microfone não disponível';
+  }
+}
+
+function stopVAD() {
+  vadActive = false;
+  if (vadAnimFrame) cancelAnimationFrame(vadAnimFrame);
+  if (vadSilenceTimer) clearTimeout(vadSilenceTimer);
+  if (vadMediaRecorder && vadSpeaking) vadMediaRecorder.stop();
+  if (vadStream) vadStream.getTracks().forEach(t => t.stop());
+  if (vadContext) vadContext.close();
+  vadSpeaking = false;
+  setVADState('off');
+  renderVADBars(new Uint8Array(128).fill(128));
+}
+
+function toggleVAD() {
+  if (vadActive) {
+    stopVAD();
+    const btn = document.getElementById('vad-toggle');
+    btn.textContent = '○ escuta pausada';
+    btn.classList.remove('on');
+  } else {
+    startVAD();
+    const btn = document.getElementById('vad-toggle');
+    btn.textContent = '● escuta ativa';
+    btn.classList.add('on');
+  }
+}
+
+function vadLoop() {
+  if (!vadActive) return;
+  const data = new Uint8Array(vadAnalyser.fftSize);
+  vadAnalyser.getByteTimeDomainData(data);
+
+  // Calculate RMS volume
+  let sum = 0;
+  for (let i = 0; i < data.length; i++) { const v = (data[i] - 128); sum += v * v; }
+  const rms = Math.sqrt(sum / data.length);
+
+  renderVADBars(data, rms);
+
+  if (rms > VAD_THRESHOLD) {
+    // Speech detected
+    if (!vadSpeaking) startCapture();
+    if (vadSilenceTimer) { clearTimeout(vadSilenceTimer); vadSilenceTimer = null; }
+  } else {
+    // Silence
+    if (vadSpeaking && !vadSilenceTimer) {
+      vadSilenceTimer = setTimeout(() => {
+        if (vadSpeaking) endCapture();
+      }, VAD_SILENCE_MS);
+    }
+  }
+
+  vadAnimFrame = requestAnimationFrame(vadLoop);
+}
+
+function startCapture() {
+  vadSpeaking = true;
+  vadChunks = [];
+  setVADState('speaking');
+
+  const options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : {};
+  vadMediaRecorder = new MediaRecorder(vadStream, options);
+  vadMediaRecorder.ondataavailable = e => { if (e.data.size > 0) vadChunks.push(e.data); };
+  vadMediaRecorder.onstop = onCaptureEnd;
+  vadMediaRecorder.start();
+}
+
+function endCapture() {
+  if (!vadSpeaking) return;
+  vadSpeaking = false;
+  vadSilenceTimer = null;
+  if (vadMediaRecorder && vadMediaRecorder.state !== 'inactive') {
+    vadMediaRecorder.stop();
+  }
+  setVADState('processing');
+}
+
+function onCaptureEnd() {
+  if (vadChunks.length === 0) { setVADState('listening'); return; }
+  const blob = new Blob(vadChunks, { type: 'audio/webm' });
+  // Min duration check (~0.3s)
+  if (blob.size < 3000) { setVADState('listening'); return; }
+  processVADAudio(blob);
+}
+
+async function processVADAudio(blob) {
+  // SpeechRecognition handles transcription — blob kept for future Whisper integration
+  setVADState('processing');
+  await sendAudioToAI();
+  if (vadActive) setVADState('listening');
+}
+
+function renderVADBars(data, rms = 0) {
+  const cols = document.querySelectorAll('.vad-col');
+  const isSpeaking = rms > VAD_THRESHOLD;
+  const step = Math.floor(data.length / cols.length);
+  cols.forEach((col, i) => {
+    const val = Math.abs(data[i * step] - 128);
+    const h = isSpeaking ? Math.max(3, Math.min(36, val * 1.6)) : Math.max(3, Math.min(10, val * 0.4));
+    col.style.height = h + 'px';
+    col.classList.toggle('active', isSpeaking);
+  });
+}
+
+function setVADState(state) {
+  const dot = document.getElementById('vad-dot');
+  const hint = document.getElementById('mic-hint');
+  dot.className = 'vad-dot ' + state;
+  if (state === 'listening') { hint.textContent = 'a ouvir — fala quando quiseres'; hint.classList.remove('speaking'); }
+  else if (state === 'speaking') { hint.textContent = 'a capturar...'; hint.classList.add('speaking'); }
+  else if (state === 'processing') { hint.textContent = 'a analisar...'; hint.classList.remove('speaking'); }
+  else { hint.textContent = 'microfone pausado'; hint.classList.remove('speaking'); }
+}
+
+// ── AI ────────────────────────────────────────────────────────────────────────
+function sendAudioToAI() {
+  // Use Web Speech API for real-time transcription (works on iOS Safari + Chrome)
+  return new Promise((resolve) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      // No speech recognition — send generic context-aware prompt
+      sendToAI('O que devo fazer agora neste momento do evento?');
+      resolve(); return;
+    }
+    const recog = new SpeechRecognition();
+    recog.lang = 'pt-PT';
+    recog.interimResults = false;
+    recog.maxAlternatives = 1;
+    recog.onresult = (e) => {
+      const transcript = e.results[0][0].transcript.trim();
+      if (transcript) {
+        resolve();
+        sendToAI(transcript);
+      } else { resolve(); if (vadActive) setVADState('listening'); }
+    };
+    recog.onerror = () => { resolve(); if (vadActive) setVADState('listening'); };
+    recog.onend = () => resolve();
+    recog.start();
+  });
+}
+
+async function sendToAI(userText) {
+  addMessage('user', userText);
+  messages.push({ role:'user', content:userText });
+  showThinking();
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:buildSystemPrompt(), messages })
+    });
+    hideThinking();
+    if (!response.ok) { simulateFallback(userText); return; }
+    const data = await response.json();
+    processAIResponse(data.content?.[0]?.text || '');
+  } catch(e) {
+    hideThinking();
+    simulateFallback(userText);
+  }
+}
+
+function processAIResponse(text) {
+  const logMatches = text.match(/\[REGISTO:\s*(.+?)\]/g);
+  if (logMatches) logMatches.forEach(m => addToLog(m.replace(/\[REGISTO:\s*/,'').replace(/\]$/,'')));
+  const clean = text.replace(/\[REGISTO:\s*.+?\]/g,'').trim();
+  addMessage('ai', clean||text);
+  messages.push({ role:'assistant', content:text });
+  speakText(clean||text);
+}
+
+function simulateFallback(input) {
+  const {current, next} = getCurrentItem();
+  const confirmed = crewData.staff.filter(s=>s.status==='confirmed').length;
+  const pending = crewData.staff.filter(s=>s.status==='pending').length;
+  const declined = crewData.staff.filter(s=>s.status==='declined').length;
+
+  let resp;
+  const il = input.toLowerCase();
+  if (il.includes('próximo') || il.includes('seguir')) {
+    resp = `Agora: **${current?.title||'início'}**. A seguir: **${next?.title||'fim'}** às ${next?.time||'--'}.`;
+  } else if (il.includes('protocolo') || il.includes('emergência')) {
+    resp = `Protocolo ativo:\n• Incêndio: rádio GP → extintor → evacuação → ponto de encontro exterior\n• Acidente: não mover → Filipa (961 026 280) → 112`;
+  } else if (il.includes('equipa') || il.includes('estado')) {
+    resp = crewData.synced
+      ? `Equipa (CrewBrain): **${confirmed} confirmados**, **${pending} pendentes**${declined>0?`, **${declined} recusaram**`:''}.${declined>0?' ⚠️ Há substituições a resolver.':''}`
+      : `Sem dados do CrewBrain. Sincroniza primeiro nas definições.`;
+  } else if (il.includes('transport') || il.includes('carrinha')) {
+    resp = crewData.transports.length > 0
+      ? crewData.transports.map(t=>`**${t.name}**: saída ${t.departure} de ${t.origin} (${t.driver})`).join('\n')
+      : `Sem dados de transporte no CrewBrain.`;
+  } else if (il.includes('avisar') || il.includes('aviso')) {
+    resp = `Mensagem pronta:\n"[${new Date().toTimeString().slice(0,5)}] Atenção equipa — atualização em curso. Aguardem confirmação GP."`;
+  } else if (il.includes('resumo')) {
+    resp = `${eventCtx.name} em curso. ${eventLog.length} ocorrências registadas. Equipa: ${confirmed} confirmados.`;
+  } else {
+    resp = `Co-piloto em modo demonstração. Liga a API da Anthropic e o CrewBrain para resposta completa em tempo real.`;
+  }
+
+  addMessage('ai', resp);
+  messages.push({ role:'assistant', content:resp });
+  speakText(resp.replace(/\*\*/g,'').replace(/\n•/g,','));
+}
+
+// ── TTS ───────────────────────────────────────────────────────────────────────
+function speakText(text) {
+  if (!window.speechSynthesis) return;
+  const clean = text.replace(/\*\*/g,'').replace(/\[.+?\]/g,'').replace(/\n/g,'. ').slice(0,280);
+  const utt = new SpeechSynthesisUtterance(clean);
+  utt.lang = 'pt-PT'; utt.rate = 1.05; utt.pitch = 1;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utt);
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+function addMessage(role, text) {
+  const conv = document.getElementById('conversation');
+  const n = new Date();
+  const timeStr = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const formatted = text.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  div.innerHTML = `<div class="msg-label">${role==='user'?'Tu':'Co-piloto'}</div><div class="bubble">${formatted}</div><div class="msg-time">${timeStr}</div>`;
+  conv.appendChild(div);
+  conv.scrollTop = conv.scrollHeight;
+  updateContextPill();
+}
+
+let thinkingEl = null;
+function showThinking() {
+  const conv = document.getElementById('conversation');
+  thinkingEl = document.createElement('div');
+  thinkingEl.className = 'msg ai';
+  thinkingEl.innerHTML = `<div class="msg-label">Co-piloto</div><div class="thinking"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>a analisar...</span></div>`;
+  conv.appendChild(thinkingEl);
+  conv.scrollTop = conv.scrollHeight;
+}
+
+function hideThinking() { if (thinkingEl) { thinkingEl.remove(); thinkingEl = null; } }
+
+function addToLog(text) {
+  const n = new Date();
+  const timeStr = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  eventLog.push({ time:timeStr, text });
+  const list = document.getElementById('log-list');
+  list.querySelector('.log-empty')?.remove();
+  const div = document.createElement('div');
+  div.className = 'log-item';
+  div.innerHTML = `<div class="log-item-time">${timeStr}</div><div class="log-item-text">${text}</div><span class="log-item-tag">auto-registado</span>`;
+  list.insertBefore(div, list.firstChild);
+}
+</script>
+
+<!-- iOS Install Banner -->
+<div id="ios-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:14px 16px 32px;background:#fff;border-top:1px solid rgba(0,0,0,0.1);box-shadow:0 -4px 20px rgba(0,0,0,0.08);">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <img src="icons/icon-180.png" style="width:44px;height:44px;border-radius:10px;flex-shrink:0">
+    <div style="flex:1">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#111;margin-bottom:3px">Instalar Co-piloto</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(17,17,17,0.55);line-height:1.5">
+        Toca em <strong style="color:#111">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin:0 1px">
+            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          Partilhar</strong> e depois em <strong style="color:#111">Adicionar ao ecrã principal</strong>
+      </div>
+    </div>
+    <button onclick="document.getElementById('ios-banner').style.display='none';localStorage.setItem('pwa-dismissed','1')" style="background:none;border:none;font-family:'DM Mono',monospace;font-size:18px;color:rgba(17,17,17,0.35);cursor:pointer;padding:0;line-height:1;flex-shrink:0">×</button>
+  </div>
+</div>
+
+<script>
+// Show iOS install banner if not already installed and not dismissed
+(function() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('pwa-dismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    setTimeout(() => {
+      document.getElementById('ios-banner').style.display = 'block';
+    }, 3000);
+  }
+})();
+</script>
+</body>
+</html>
