@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europalco — Gestão de Projetos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --y: #F2C200; --yd: #8A6E00; --yl: rgba(242,194,0,0.12); --ym: rgba(242,194,0,0.4);
+  --bg: #F8F7F4; --card: #FFFFFF; --border: rgba(0,0,0,0.08); --border2: rgba(0,0,0,0.14);
+  --text: #111111; --dim: rgba(17,17,17,0.42); --mid: rgba(17,17,17,0.65);
+  --green: #1E7A4A; --red: #C0392B; --blue: #1A5CA8; --purple: #6B35B8;
+  --mono: 'DM Mono', monospace; --sans: 'Roboto', sans-serif;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+.app { display: flex; height: 100vh; overflow: hidden; }
+
+/* SIDEBAR */
+.sidebar { width: 220px; background: #111; flex-shrink: 0; display: flex; flex-direction: column; }
+.sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.sidebar-logo-sub { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0.08em; margin-top: 6px; }
+.sidebar-nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 7px; cursor: pointer; transition: all 0.15s; font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.45); letter-spacing: 0.04em; text-decoration: none; }
+.nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.75); }
+.nav-item.active { background: var(--yl); color: var(--y); }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nav-section { font-family: var(--mono); font-size: 8px; letter-spacing: 0.18em; color: rgba(255,255,255,0.2); text-transform: uppercase; padding: 14px 10px 6px; }
+.sidebar-bottom { padding: 12px 8px; border-top: 1px solid rgba(255,255,255,0.07); }
+.copilot-btn { width: 100%; padding: 11px 10px; background: var(--y); border: none; border-radius: 8px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: #111; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: opacity 0.2s; }
+.copilot-btn:hover { opacity: 0.9; }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+.topbar-title { font-family: var(--sans); font-weight: 700; font-size: 15px; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.btn-sm { padding: 7px 14px; background: var(--y); border: none; border-radius: 7px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: #111; cursor: pointer; transition: opacity 0.15s; }
+.btn-sm:hover { opacity: 0.85; }
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* FILTERS */
+.filters { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+.filter-pill { padding: 5px 12px; border-radius: 20px; font-family: var(--mono); font-size: 10px; border: 1px solid var(--border); background: var(--card); color: var(--dim); cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em; }
+.filter-pill:hover { border-color: var(--border2); color: var(--text); }
+.filter-pill.active { background: var(--y); border-color: var(--y); color: #111; font-weight: 500; }
+.search-input { padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px; font-family: var(--mono); font-size: 11px; color: var(--text); background: var(--card); outline: none; width: 200px; transition: border-color 0.2s; margin-left: auto; }
+.search-input:focus { border-color: var(--ym); }
+
+/* GRID */
+.tecnico-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+
+/* CARD */
+.tecnico-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: all 0.15s; }
+.tecnico-card:hover { border-color: var(--border2); box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateY(-1px); }
+.card-header { padding: 16px; display: flex; align-items: flex-start; gap: 12px; border-bottom: 1px solid var(--border); }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--sans); font-weight: 700; font-size: 16px; color: #111; flex-shrink: 0; }
+.card-info { flex: 1; min-width: 0; }
+.card-name { font-family: var(--sans); font-size: 15px; font-weight: 700; color: var(--text); }
+.card-role { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 2px; }
+.card-contact { font-family: var(--mono); font-size: 10px; color: var(--mid); margin-top: 2px; }
+.card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.stars { display: flex; gap: 2px; }
+.star { font-size: 13px; color: var(--y); }
+.star.empty { color: var(--border2); }
+.cb-badge { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 4px; }
+.cb-badge.confirmed { background: rgba(30,122,74,0.1); color: var(--green); border: 1px solid rgba(30,122,74,0.2); }
+.cb-badge.pending { background: var(--yl); color: var(--yd); border: 1px solid var(--ym); }
+.cb-badge.none { background: rgba(0,0,0,0.04); color: var(--dim); border: 1px solid var(--border); }
+
+/* SKILLS */
+.card-skills { padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.skill-row { display: flex; align-items: center; gap: 8px; }
+.skill-label { font-family: var(--mono); font-size: 9px; color: var(--dim); width: 72px; flex-shrink: 0; letter-spacing: 0.04em; text-transform: uppercase; }
+.skill-bar { flex: 1; height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.skill-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.skill-level { font-family: var(--mono); font-size: 9px; color: var(--dim); width: 44px; text-align: right; flex-shrink: 0; }
+
+/* EQUIPAMENTOS */
+.card-equip { padding: 10px 16px 14px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 5px; }
+.equip-tag { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--mid); letter-spacing: 0.03em; }
+.equip-tag.main { background: var(--yl); border-color: var(--ym); color: var(--yd); font-weight: 500; }
+
+/* CERTS */
+.card-certs { padding: 8px 16px 14px; display: flex; flex-wrap: wrap; gap: 4px; }
+.cert-tag { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 4px; background: rgba(107,53,184,0.08); border: 1px solid rgba(107,53,184,0.2); color: var(--purple); letter-spacing: 0.03em; }
+
+/* STATS BAR */
+.stats-bar { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.stat-label { font-family: var(--mono); font-size: 9px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
+.stat-val { font-family: var(--sans); font-size: 24px; font-weight: 900; color: var(--text); line-height: 1; }
+.stat-sub { font-family: var(--mono); font-size: 9px; color: var(--dim); margin-top: 3px; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal { background: var(--card); border-radius: 16px; width: 600px; max-width: 95vw; max-height: 88vh; overflow-y: auto; transform: translateY(8px); transition: transform 0.2s; }
+.modal-overlay.show .modal { transform: translateY(0); }
+.modal::-webkit-scrollbar { width: 4px; }
+.modal::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.modal-head { padding: 22px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 14px; }
+.modal-avatar { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; color: #111; flex-shrink: 0; }
+.modal-name { font-size: 20px; font-weight: 700; }
+.modal-role { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-top: 3px; }
+.modal-body { padding: 20px 24px; }
+.modal-section { margin-bottom: 20px; }
+.modal-section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; color: var(--dim); text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.field { margin-bottom: 12px; }
+.field label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--dim); text-transform: uppercase; display: block; margin-bottom: 4px; }
+.field input, .field textarea, .field select { width: 100%; padding: 8px 11px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; }
+.field input:focus, .field textarea:focus { border-color: var(--ym); }
+.field textarea { min-height: 70px; resize: vertical; line-height: 1.5; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.btn-cancel { flex: 1; padding: 10px; background: none; border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 12px; color: var(--dim); cursor: pointer; }
+.btn-save { flex: 2; padding: 10px; background: var(--y); border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px; font-weight: 700; color: #111; cursor: pointer; }
+.btn-delete { padding: 10px 16px; background: none; border: 1px solid rgba(192,57,43,0.25); border-radius: 8px; font-family: var(--mono); font-size: 11px; color: var(--red); cursor: pointer; }
+
+/* SKILL EDITOR */
+.skill-editor { display: flex; flex-direction: column; gap: 10px; }
+.skill-edit-row { display: flex; align-items: center; gap: 10px; }
+.skill-edit-label { font-family: var(--mono); font-size: 10px; color: var(--mid); width: 80px; flex-shrink: 0; }
+.skill-slider { flex: 1; accent-color: var(--y); }
+.skill-edit-val { font-family: var(--mono); font-size: 10px; color: var(--yd); width: 48px; text-align: right; flex-shrink: 0; }
+
+/* STAR EDITOR */
+.star-editor { display: flex; gap: 6px; }
+.star-edit { font-size: 22px; cursor: pointer; color: var(--border2); transition: color 0.1s; }
+.star-edit.on { color: var(--y); }
+
+/* EQUIP EDITOR */
+.equip-editor { display: flex; flex-wrap: wrap; gap: 6px; }
+.equip-toggle { padding: 4px 10px; border-radius: 5px; border: 1px solid var(--border); background: var(--bg); font-family: var(--mono); font-size: 10px; color: var(--dim); cursor: pointer; transition: all 0.15s; }
+.equip-toggle.on { background: var(--yl); border-color: var(--ym); color: var(--yd); font-weight: 500; }
+.equip-toggle.main-on { background: #111; border-color: #111; color: var(--y); font-weight: 500; }
+
+/* CERTS EDITOR */
+.cert-input-wrap { display: flex; gap: 6px; margin-bottom: 8px; }
+.cert-input { flex: 1; padding: 7px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--text); outline: none; }
+.cert-input:focus { border-color: var(--ym); }
+.cert-add-btn { padding: 7px 12px; background: var(--y); border: none; border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 500; color: #111; cursor: pointer; }
+.cert-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.cert-item { display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; background: rgba(107,53,184,0.08); border: 1px solid rgba(107,53,184,0.2); }
+.cert-item span { font-family: var(--mono); font-size: 10px; color: var(--purple); }
+.cert-item button { background: none; border: none; color: var(--purple); cursor: pointer; font-size: 12px; padding: 0; line-height: 1; opacity: 0.6; }
+
+/* INLINE EDIT */
+.card-header { position: relative; }
+.card-edit-btn { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; color: var(--dim); transition: all 0.15s; z-index: 2; }
+.tecnico-card:hover .card-edit-btn { display: flex; }
+.card-edit-btn:hover { background: var(--y); border-color: var(--y); color: #111; }
+.inline-field { display: flex; align-items: center; gap: 0; min-width: 0; flex: 1; }
+.inline-input { font-family: var(--sans); font-size: 15px; font-weight: 700; color: var(--text); border: none; background: transparent; outline: none; width: 100%; padding: 0; line-height: 1.2; }
+.inline-input.role { font-family: var(--mono); font-size: 10px; font-weight: 400; color: var(--dim); margin-top: 2px; }
+.inline-input.contact { font-family: var(--mono); font-size: 10px; font-weight: 400; color: var(--mid); margin-top: 2px; }
+.inline-input:focus { background: var(--yl); border-radius: 4px; padding: 1px 4px; outline: none; }
+.inline-input:hover:not(:focus) { background: var(--bg); border-radius: 4px; padding: 1px 4px; }
+
+/* SKILLS INLINE */
+.skills-expanded { display: none; padding: 14px 16px; border-top: 1px solid var(--border); background: var(--bg); }
+.skills-expanded.show { display: block; }
+.skill-edit-row-card { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.skill-edit-row-card:last-child { margin-bottom: 0; }
+.skill-label-card { font-family: var(--mono); font-size: 10px; color: var(--dim); width: 88px; flex-shrink: 0; letter-spacing: 0.04em; }
+.skill-slider-card { flex: 1; accent-color: var(--y); height: 4px; cursor: pointer; }
+.skill-val-card { font-family: var(--mono); font-size: 10px; color: var(--yd); width: 36px; text-align: right; flex-shrink: 0; }
+.skill-level-card { font-family: var(--mono); font-size: 9px; width: 44px; flex-shrink: 0; }
+.expand-skills-btn { width: 100%; padding: 7px 16px; background: none; border: none; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 10px; color: var(--dim); cursor: pointer; text-align: left; display: flex; align-items: center; justify-content: space-between; transition: all 0.15s; }
+.expand-skills-btn:hover { background: var(--bg); color: var(--text); }
+.expand-skills-btn .arrow { transition: transform 0.2s; display: inline-block; }
+.expand-skills-btn.open .arrow { transform: rotate(180deg); }
+.card-save-bar { display: none; padding: 8px 16px; background: var(--yl); border-top: 1px solid var(--ym); gap: 8px; align-items: center; }
+.card-save-bar.show { display: flex; }
+.card-save-btn { padding: 5px 14px; background: var(--y); border: none; border-radius: 6px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: #111; cursor: pointer; }
+.card-cancel-btn { padding: 5px 10px; background: none; border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--dim); cursor: pointer; }
+.card-save-label { font-family: var(--mono); font-size: 10px; color: var(--yd); flex: 1; }
+
+/* CUSTOM CATEGORY MANAGER */
+.cat-manager { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.cat-manager-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--dim); text-transform: uppercase; margin-bottom: 8px; }
+.cat-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.cat-input { flex: 1; padding: 6px 10px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--text); outline: none; }
+.cat-input:focus { border-color: var(--ym); }
+.cat-color-pick { width: 32px; height: 32px; padding: 2px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: var(--card); flex-shrink: 0; }
+.cat-add-btn { padding: 6px 12px; background: var(--y); border: none; border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 500; color: #111; cursor: pointer; white-space: nowrap; }
+.cat-tag { display: flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 5px; font-family: var(--mono); font-size: 10px; }
+.cat-tag button { background: none; border: none; cursor: pointer; font-size: 13px; opacity: 0.5; padding: 0; line-height: 1; }
+.equip-add-wrap { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.equip-add-input { flex: 1; padding: 6px 10px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--text); outline: none; }
+.equip-add-input:focus { border-color: var(--ym); }
+.equip-area-select { padding: 6px 8px; background: var(--card); border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--text); outline: none; cursor: pointer; }
+.equip-add-btn { padding: 6px 12px; background: var(--y); border: none; border-radius: 6px; font-family: var(--mono); font-size: 11px; font-weight: 500; color: #111; cursor: pointer; }
+
+/* NOTIF */
+.notif { position: fixed; bottom: 24px; right: 24px; background: #111; color: #fff; font-family: var(--mono); font-size: 12px; padding: 12px 18px; border-radius: 8px; border-left: 3px solid var(--y); opacity: 0; transform: translateY(8px); transition: all 0.25s; z-index: 400; }
+.notif.show { opacity: 1; transform: translateY(0); }
+
+/* COPILOT EXPORT BANNER */
+.export-banner { background: #111; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+.export-icon { font-size: 20px; flex-shrink: 0; }
+.export-info { flex: 1; }
+.export-title { font-family: var(--sans); font-size: 13px; font-weight: 700; color: #fff; }
+.export-sub { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.export-btn { padding: 8px 14px; background: var(--y); border: none; border-radius: 7px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: #111; cursor: pointer; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <img id="sidebar-logo-img" alt="Europalco" style="height:32px;width:auto;display:block;margin-bottom:4px">
+      <div class="sidebar-logo-sub">Gestão de Projetos</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Geral</div>
+      <a class="nav-item" href="pre-producao.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="pre-producao.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Projetos
+      </a>
+      <div class="nav-section">Produção</div>
+      <a class="nav-item" href="pre-producao.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pendentes
+      </a>
+      <a class="nav-item" href="pre-producao.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>
+        Timeline
+      </a>
+      <div class="nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Equipa Técnica
+      </div>
+      <a class="nav-item" href="pre-producao.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Documentos
+      </a>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="copilot-btn" onclick="exportToCopilot()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M12 8v4l3 3"/></svg>
+        Lançar Co-piloto
+      </button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Equipa Técnica</div>
+      <div class="topbar-right">
+        <div id="cb-sync-status" onclick="showCBConfig()" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--dim);transition:all 0.15s" title="Configurar CrewBrain">
+          <div id="cb-dot" style="width:6px;height:6px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:all 0.2s"></div>
+          <span id="cb-label">CrewBrain</span>
+        </div>
+        <button class="btn-sm" onclick="syncNow()" id="btn-sync" style="background:var(--bg);border:1px solid var(--border);color:var(--mid);font-size:11px;padding:6px 12px">↻ Sync</button>
+        <button class="btn-sm" onclick="openModal()">+ Novo Técnico</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- Export banner -->
+      <div class="export-banner">
+        <div class="export-icon">◈</div>
+        <div class="export-info">
+          <div class="export-title">Perfis disponíveis para o Co-piloto</div>
+          <div class="export-sub" id="export-sub">Os perfis da equipa são transferidos automaticamente quando lanças o co-piloto num evento</div>
+        </div>
+        <button class="export-btn" onclick="exportToCopilot()">▶ Lançar Co-piloto</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-bar" id="stats-bar"></div>
+
+      <!-- Filters -->
+      <div class="filters">
+        <div class="filter-pill active" onclick="setFilter('todos',this)">Todos</div>
+        <div class="filter-pill" onclick="setFilter('som',this)">Som</div>
+        <div class="filter-pill" onclick="setFilter('luz',this)">Luz</div>
+        <div class="filter-pill" onclick="setFilter('video',this)">Vídeo</div>
+        <div class="filter-pill" onclick="setFilter('automatismos',this)">Automatismos</div>
+        <div class="filter-pill" onclick="setFilter('estruturas',this)">Estruturas</div>
+        <div class="filter-pill" onclick="setFilter('producao',this)">Produção</div>
+        <div class="filter-pill" onclick="setFilter('seguranca',this)">Segurança</div>
+        <div class="filter-pill" onclick="setFilter('senior',this)">Sénior</div>
+        <div class="filter-pill" onclick="setFilter('avaliar',this)">Por avaliar</div>
+        <input class="search-input" type="text" placeholder="Pesquisar técnico..." oninput="renderGrid()" id="search">
+      </div>
+
+      <!-- Grid -->
+      <div class="tecnico-grid" id="tecnico-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="maybeClose(event)">
+  <div class="modal" id="modal">
+    <div class="modal-head">
+      <div class="modal-avatar" id="modal-avatar" style="background:#F2C200">AB</div>
+      <div>
+        <div class="modal-name" id="modal-title-name">Novo Técnico</div>
+        <div class="modal-role" id="modal-title-role">Preenche os dados abaixo</div>
+      </div>
+      <button onclick="closeModal()" style="margin-left:auto;background:none;border:none;font-size:20px;color:var(--dim);cursor:pointer">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Dados pessoais -->
+      <div class="modal-section">
+        <div class="modal-section-title">Dados pessoais</div>
+        <div class="field-row">
+          <div class="field"><label>Nome completo</label><input type="text" id="f-name" placeholder="ex: João Silva" oninput="updateModalHeader()"></div>
+          <div class="field"><label>Função principal</label><input type="text" id="f-role" placeholder="ex: Técnico de Som" oninput="updateModalHeader()"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Contacto</label><input type="text" id="f-phone" placeholder="ex: 912 345 678"></div>
+          <div class="field"><label>Email</label><input type="text" id="f-email" placeholder="ex: joao@email.com"></div>
+        </div>
+        <div class="field"><label>Estado CrewBrain</label>
+          <select id="f-cb"><option value="none">Não registado</option><option value="confirmed">Confirmado</option><option value="pending">Pendente</option></select>
+        </div>
+      </div>
+
+      <!-- Avaliação geral -->
+      <div class="modal-section">
+        <div class="modal-section-title">Avaliação geral</div>
+        <div class="star-editor" id="star-editor">
+          <span class="star-edit" onclick="setStar(1)">★</span>
+          <span class="star-edit" onclick="setStar(2)">★</span>
+          <span class="star-edit" onclick="setStar(3)">★</span>
+          <span class="star-edit" onclick="setStar(4)">★</span>
+          <span class="star-edit" onclick="setStar(5)">★</span>
+        </div>
+        <div class="field" style="margin-top:10px"><label>Notas internas do GP</label><textarea id="f-notes" placeholder="Observações sobre o técnico, pontos fortes, situações relevantes..."></textarea></div>
+      </div>
+
+      <!-- Competências por área -->
+      <div class="modal-section">
+        <div class="modal-section-title">Nível de competência por área (0 = sem experiência, 100 = especialista)</div>
+        <div class="skill-editor">
+          <div class="skill-edit-row"><span class="skill-edit-label">Som</span><input type="range" class="skill-slider" id="sk-som" min="0" max="100" value="0" oninput="updateSkillVal('som',this.value)"><span class="skill-edit-val" id="skv-som">0%</span></div>
+          <div class="skill-edit-row"><span class="skill-edit-label">Luz</span><input type="range" class="skill-slider" id="sk-luz" min="0" max="100" value="0" oninput="updateSkillVal('luz',this.value)"><span class="skill-edit-val" id="skv-luz">0%</span></div>
+          <div class="skill-edit-row"><span class="skill-edit-label">Vídeo</span><input type="range" class="skill-slider" id="sk-video" min="0" max="100" value="0" oninput="updateSkillVal('video',this.value)"><span class="skill-edit-val" id="skv-video">0%</span></div>
+          <div class="skill-edit-row"><span class="skill-edit-label">Automatismos</span><input type="range" class="skill-slider" id="sk-automatismos" min="0" max="100" value="0" oninput="updateSkillVal('automatismos',this.value)"><span class="skill-edit-val" id="skv-automatismos">0%</span></div>
+          <div class="skill-edit-row"><span class="skill-edit-label">Estruturas</span><input type="range" class="skill-slider" id="sk-estruturas" min="0" max="100" value="0" oninput="updateSkillVal('estruturas',this.value)"><span class="skill-edit-val" id="skv-estruturas">0%</span></div>
+          <div class="skill-edit-row"><span class="skill-edit-label">Logística</span><input type="range" class="skill-slider" id="sk-logistica" min="0" max="100" value="0" oninput="updateSkillVal('logistica',this.value)"><span class="skill-edit-val" id="skv-logistica">0%</span></div>
+          <div class="skill-edit-row"><span class="skill-edit-label">Produção</span><input type="range" class="skill-slider" id="sk-producao" min="0" max="100" value="0" oninput="updateSkillVal('producao',this.value)"><span class="skill-edit-val" id="skv-producao">0%</span></div>
+          <div class="skill-edit-row"><span class="skill-edit-label">Criativo</span><input type="range" class="skill-slider" id="sk-criativo" min="0" max="100" value="0" oninput="updateSkillVal('criativo',this.value)"><span class="skill-edit-val" id="skv-criativo">0%</span></div>
+          <div class="skill-edit-row"><span class="skill-edit-label">Segurança</span><input type="range" class="skill-slider" id="sk-seguranca" min="0" max="100" value="0" oninput="updateSkillVal('seguranca',this.value)"><span class="skill-edit-val" id="skv-seguranca">0%</span></div>
+        </div>
+      </div>
+
+      <!-- Equipamentos -->
+      <div class="modal-section">
+        <div class="modal-section-title">Equipamentos que opera (amarelo = área principal)</div>
+        <div class="equip-editor" id="equip-editor"></div>
+      </div>
+
+      <!-- Adicionar equipamento personalizado -->
+      <div class="equip-add-wrap">
+        <input class="equip-add-input" type="text" id="custom-equip-input" placeholder="Novo equipamento/função...">
+        <select class="equip-area-select" id="custom-equip-area">
+          <option value="">-- Área --</option>
+        </select>
+        <button class="equip-add-btn" onclick="addCustomEquip()">+ Adicionar</button>
+      </div>
+      </div>
+
+      <!-- Gerir categorias personalizadas -->
+      <div class="modal-section" id="cat-manager-section" style="display:none">
+        <div class="modal-section-title">Categorias personalizadas</div>
+        <div class="cat-manager">
+          <div class="cat-manager-title">Adicionar nova categoria de competência</div>
+          <div class="cat-row">
+            <input class="cat-input" type="text" id="new-cat-id" placeholder="ID (sem espaços, ex: automacao)">
+            <input class="cat-input" type="text" id="new-cat-label" placeholder="Nome (ex: Automação)">
+            <input class="cat-color-pick" type="color" id="new-cat-color" value="#6B35B8">
+            <button class="cat-add-btn" onclick="addCustomCategory()">+ Categoria</button>
+          </div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:6px">Categorias personalizadas:</div>
+          <div class="cert-list" id="custom-cat-list" style="margin-top:6px"></div>
+        </div>
+      </div>
+
+      <!-- Certificações -->
+      <div class="modal-section">
+        <div class="modal-section-title">Certificações e formações</div>
+        <div class="cert-input-wrap">
+          <input class="cert-input" type="text" id="cert-input" placeholder="ex: Dante Level 3, Trabalho em Altura, EPI..." onkeydown="if(event.key==='Enter')addCert()">
+          <button class="cert-add-btn" onclick="addCert()">+ Adicionar</button>
+        </div>
+        <div class="cert-list" id="cert-list"></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-delete" id="btn-delete" onclick="deleteTecnico()" style="display:none">Eliminar</button>
+      <button class="btn-cancel" onclick="toggleCatManager()" id="btn-cat-manager" style="font-size:10px;padding:10px 12px">⊕ Categorias</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveTecnico()">Guardar perfil</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<!-- CB CONFIG PANEL -->
+<div id="cb-config-panel" style="display:none;position:fixed;top:56px;right:0;width:340px;background:var(--card);border-left:1px solid var(--border);border-bottom:1px solid var(--border);z-index:150;padding:20px;box-shadow:-4px 4px 20px rgba(0,0,0,0.08)">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div style="font-family:var(--sans);font-size:14px;font-weight:700">Configuração CrewBrain</div>
+    <button onclick="hideCBConfig()" style="background:none;border:none;font-size:18px;color:var(--dim);cursor:pointer">×</button>
+  </div>
+  <div class="field">
+    <label>URL base da API</label>
+    <input type="text" id="cfg-cb-url" placeholder="https://app.crewbrain.net/api">
+  </div>
+  <div class="field">
+    <label>Credenciais (user:password)</label>
+    <input type="password" id="cfg-cb-auth" placeholder="utilizador:password">
+  </div>
+  <div class="field">
+    <label>Event ID (opcional — filtra por evento)</label>
+    <input type="text" id="cfg-cb-eventid" placeholder="ex: 12345 — deixar vazio para pool geral">
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button onclick="saveCBConfig()" style="flex:2;padding:9px;background:var(--y);border:none;border-radius:7px;font-family:var(--sans);font-size:12px;font-weight:700;color:#111;cursor:pointer">Guardar e sincronizar</button>
+    <button onclick="hideCBConfig()" style="flex:1;padding:9px;background:none;border:1px solid var(--border);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--dim);cursor:pointer">Cancelar</button>
+  </div>
+  <div id="cb-config-status" style="margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.5"></div>
+</div>
+
+<script>
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const AREAS = ['som','luz','video','automatismos','estruturas','logistica','producao','criativo','seguranca'];
+const AREA_LABELS = { som:'Som', luz:'Luz', video:'Vídeo', automatismos:'Automatismos', estruturas:'Estruturas', logistica:'Logística', producao:'Produção', criativo:'Criativo', seguranca:'Segurança' };
+const AREA_COLORS = { som:'#1A5CA8', luz:'#C49A00', video:'#C0392B', automatismos:'#6B35B8', estruturas:'#1E7A4A', logistica:'#E67E22', producao:'#16A085', criativo:'#D4557A', seguranca:'#E74C3C' };
+
+const EQUIPAMENTOS = [
+  // Som
+  { id:'yamaha-ql1', label:'Yamaha QL1', area:'som' },
+  { id:'yamaha-ql5', label:'Yamaha QL5', area:'som' },
+  { id:'dante', label:'Dante', area:'som' },
+  { id:'tec-som', label:'Técnico de Som', area:'som' },
+  { id:'assist-som', label:'Assistente de Som', area:'som' },
+  // Luz
+  { id:'op-ma', label:'Operador MA', area:'luz' },
+  { id:'op-avolites', label:'Operador Avolites', area:'luz' },
+  { id:'op-hog', label:'Operador HOG', area:'luz' },
+  { id:'tec-luz', label:'Técnico de Iluminação', area:'luz' },
+  { id:'assist-luz', label:'Assistente de Iluminação', area:'luz' },
+  // Vídeo
+  { id:'op-spyder', label:'Operador Spyder', area:'video' },
+  { id:'op-aw-pulse', label:'Operador Analogueway Pulse', area:'video' },
+  { id:'op-pandora', label:'Operador Pandora Box', area:'video' },
+  { id:'op-pvp', label:'Operador PVP', area:'video' },
+  { id:'op-barco-e2', label:'Operador Barco E2', area:'video' },
+  { id:'op-resolume', label:'Operador Resolume', area:'video' },
+  { id:'op-ledwall', label:'Operador LedWall', area:'video' },
+  { id:'op-proj', label:'Operador Projetores Vídeo', area:'video' },
+  { id:'op-pixelhue', label:'Operador PixelHue P20/P10', area:'video' },
+  { id:'op-aw-ascender', label:'Operador Analogueway Ascender', area:'video' },
+  { id:'tec-video', label:'Técnico de Vídeo', area:'video' },
+  { id:'assist-video', label:'Assistente de Vídeo', area:'video' },
+  { id:'op-camara', label:'Operador de Câmara', area:'video' },
+  { id:'op-steadicam', label:'Operador de Steadicam', area:'video' },
+  { id:'op-streaming', label:'Operador Streaming', area:'video' },
+  { id:'op-grua', label:'Operador de Grua', area:'video' },
+  { id:'op-ctrl-imagem', label:'Operador Controlo de Imagem', area:'video' },
+  { id:'realizador', label:'Realizador', area:'video' },
+  { id:'assist-realizacao', label:'Assistente de Realização', area:'video' },
+  { id:'op-teleponto', label:'Operador de Teleponto', area:'video' },
+  { id:'op-vmix', label:'Operador vMix', area:'video' },
+  { id:'op-efeitos', label:'Operador Efeitos', area:'video' },
+  // Automatismos
+  { id:'op-kinetic', label:'Operador Kinetic', area:'automatismos' },
+  { id:'op-kuka', label:'Operador Kuka', area:'automatismos' },
+  { id:'op-movecat', label:'Operador Movecat', area:'automatismos' },
+  { id:'op-calha-led', label:'Automatismo Calha LedWall', area:'automatismos' },
+  { id:'op-plat-elev', label:'Automatismo Plataforma Elevatória', area:'automatismos' },
+  { id:'op-palco-rot', label:'Automatismo Palco Rotativo', area:'automatismos' },
+  // Estruturas
+  { id:'rigger', label:'Rigger', area:'estruturas' },
+  { id:'tec-estruturas', label:'Técnico de Estruturas', area:'estruturas' },
+  { id:'carpinteiro', label:'Carpinteiro', area:'estruturas' },
+  { id:'costureira', label:'Costureira', area:'estruturas' },
+  { id:'pintor', label:'Pintor', area:'estruturas' },
+  { id:'serralheiro', label:'Serralheiro', area:'estruturas' },
+  { id:'vinilador', label:'Vinilador', area:'estruturas' },
+  { id:'impressao', label:'Impressão', area:'estruturas' },
+  { id:'cablagem', label:'Cablagem', area:'estruturas' },
+  { id:'stagehand', label:'StageHand', area:'estruturas' },
+  // Logística
+  { id:'motorista', label:'Motorista de Pesados', area:'logistica' },
+  // Produção / Direção
+  { id:'show-caller', label:'Show Caller', area:'producao' },
+  { id:'stage-manager', label:'Stage Manager', area:'producao' },
+  { id:'apresentador', label:'Apresentador', area:'producao' },
+  { id:'op-slidedesk', label:'Técnico Slidedesk', area:'producao' },
+  { id:'tec-suporte', label:'Técnico Suporte Plataforma', area:'producao' },
+  { id:'client-account', label:'Client Account', area:'producao' },
+  { id:'comercial', label:'Comercial', area:'producao' },
+  // Criativo / Outros
+  { id:'editor-video', label:'Editor de Vídeo', area:'criativo' },
+  { id:'fotografo', label:'Fotógrafo', area:'criativo' },
+  { id:'maquilhadora', label:'Maquilhadora', area:'criativo' },
+  // Segurança / Chefia
+  { id:'chefias', label:'Chefia', area:'seguranca' },
+  { id:'tec-sst', label:'Técnico Segurança no Trabalho', area:'seguranca' },
+  { id:'socorrista', label:'Socorrista', area:'seguranca' },
+];
+
+const AVATAR_COLORS = ['#F2C200','#1A5CA8','#1E7A4A','#C0392B','#6B35B8','#E67E22','#16A085'];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let tecnicos = JSON.parse(localStorage.getItem('ep-tecnicos') || '[]');
+let currentFilter = 'todos';
+let editingId = null;
+let currentStar = 0;
+let currentEquip = new Set();
+let currentEquipMain = new Set();
+let currentCerts = [];
+
+// Demo data
+if (tecnicos.length === 0) {
+  tecnicos = [
+    { id:1, name:'Bruno Domingos', role:'Gestor de Projeto', phone:'961 026 466', email:'bruno@europalco.pt', cb:'confirmed', stars:5, notes:'GP principal. Gestão operacional, comunicação com cliente e coordenação total.', skills:{som:60,luz:40,video:50,automatismos:20,estruturas:30,logistica:30,producao:100,criativo:20,seguranca:40}, equip:['yamaha-ql1','dante','show-caller','stage-manager'], equipMain:['producao','show-caller'], certs:['Dante Level 3','Shure Wireless','Yamaha ProAV Specialist L2'] },
+    { id:2, name:'Luís Pinto', role:'Responsável de Estruturas', phone:'', email:'', cb:'confirmed', stars:4, notes:'Muito fiável em montagens complexas. Excelente coordenação com rigging externo.', skills:{som:0,luz:10,video:0,automatismos:20,estruturas:95,logistica:40,producao:30,criativo:0,seguranca:60}, equip:['rigger','tec-estruturas','carpinteiro','cablagem','stagehand'], equipMain:['rigger','tec-estruturas'], certs:['Trabalho em Altura','EPI Nível 2'] },
+    { id:3, name:'Ricardo Pinto', role:'Técnico de Som', phone:'', email:'', cb:'confirmed', stars:5, notes:'Especialista FOH. Excelente ouvido e gestão de tempo em soundcheck.', skills:{som:95,luz:15,video:10,automatismos:0,estruturas:20,logistica:0,producao:20,criativo:0,seguranca:10}, equip:['yamaha-ql1','yamaha-ql5','dante','tec-som'], equipMain:['yamaha-ql5','dante'], certs:['Dante Level 3','Yamaha ProAV Specialist L2','Shure Wireless'] },
+    { id:4, name:'Sara Rodrigues', role:'Responsável de Iluminação', phone:'', email:'', cb:'confirmed', stars:4, notes:'Programação criativa e rápida. Boa comunicação com o cliente.', skills:{som:10,luz:90,video:20,automatismos:30,estruturas:15,logistica:0,producao:30,criativo:20,seguranca:10}, equip:['op-ma','op-avolites','op-hog','tec-luz'], equipMain:['op-ma','op-avolites'], certs:['GrandMA2 Certified','HOG4 Certified'] },
+    { id:5, name:'Miguel Costa', role:'Responsável de Vídeo', phone:'', email:'', cb:'confirmed', stars:4, notes:'Forte em LED Wall e switching ao vivo. A evoluir em automatismos.', skills:{som:10,luz:20,video:88,automatismos:40,estruturas:20,logistica:0,producao:25,criativo:30,seguranca:10}, equip:['op-barco-e2','op-ledwall','op-resolume','op-spyder','op-pixelhue','tec-video'], equipMain:['op-barco-e2','op-ledwall'], certs:['Barco E2 Operator'] },
+    { id:6, name:'Pedro Alves', role:'Técnico de Estruturas', phone:'', email:'', cb:'pending', stars:3, notes:'Bom nas montagens básicas. A ganhar experiência em automatismos.', skills:{som:0,luz:0,video:0,automatismos:25,estruturas:65,logistica:30,producao:10,criativo:0,seguranca:20}, equip:['tec-estruturas','cablagem','stagehand'], equipMain:['tec-estruturas'], certs:['EPI Básico'] },
+  ];
+  save();
+}
+
+function save() { localStorage.setItem('ep-tecnicos', JSON.stringify(tecnicos)); }
+
+// ── LOGO ──────────────────────────────────────────────────────────────────────
+const LOGO_B64 = 'data:image/webp;base64,UklGRvoCAABXRUJQVlA4WAoAAAAYAAAAAwEATwAAQUxQSF4AAAABR6AQABA01z9APBEVEQEvc+a7YBVJVqP9RBoKkICOHJznDHcV0X+jbds4dBrdbkDZQrFQtj8rBLHkAOjngOoQ5ZGYH8FN3gUjGBnBos/xX5KU6W1RUuJFMoKb/GMFVlA4IPABAABwEgCdASoEAVAAPnU4mEikoyKhJtVY8JAOiWVu7mFQALQ7jPYOgK5P/Jc5P4c/133AfQDPO+YDzqv4B/gPYB6AH9V/gHWQegB/AP7B6WX7R/Eb+on7AewABIcTphsqqBu1i4Tifayj0RWk+p3MHk7ioJGAfj7UgArs+X+qhi0cn5IXXzMdCdVRtK5OtVz+Smy+jxbvzDpIkkgflgAA/vuc1T4rn//iAI/+x/5GBo/+j/yMDR8xkzywmI3uywzji4fou7Xr/ttsgaoX/622QNUL+RYuH7Cxer9vWAmjL/DA9ikC7rkydTe7+lul/VLPVM1j/afi3pozL0THQHOEueOZXQblKTc2976SwjQvCD0206Nir45CHz9E2oxxo3srCB2vM+R/gzu59w21R5pFlea+yuU5T3oqQAT/udMPLmOkf68+uT7YWrKJQ6d/HbQzxYL+lYgZzYcJYNYxIygeCrc8+MxXvPvkFAT1/o9KSXxKVusyqsvxo3srB+NeZ8j/Bndz7gI2Ca/AHuKoQQ2OydvQD6dCkua5Jt119vyK3f4y+hvE+wZVLdeZZdWsLVv2p7uplvef37kFA17Nui1CyXJVZLDlq03zMD9eTzIDJQMPYZfjT6TfBELTofGIpGcSjN08DAQDnKhBut6h3V9gAAAARVhJRn4AAABFeGlmAABJSSoACAAAAAUAEgEDAAEAAAABAAAAGgEFAAEAAABKAAAAGwEFAAEAAABSAAAAKAEDAAEAAAACAAAAaYcEAAEAAABaAAAAAAAAAEgAAAABAAAASAAAAAEAAAACAAKgBAABAAAABAEAAAOgBAABAAAAUAAAAAAAAAA=';
+document.getElementById('sidebar-logo-img').src = LOGO_B64;
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const total = tecnicos.length;
+  const seniors = tecnicos.filter(t => Object.values(t.skills).some(v => v >= 80)).length;
+  const confirmed = tecnicos.filter(t => t.cb === 'confirmed').length;
+  const avgStars = total ? (tecnicos.reduce((s,t) => s + t.stars, 0) / total).toFixed(1) : 0;
+  // Inject custom category filter pills
+  const filterBar = document.querySelector('.filters');
+  if (filterBar) {
+    document.querySelectorAll('.custom-filter-pill').forEach(el => el.remove());
+    customCategories.forEach(c => {
+      const pill = document.createElement('div');
+      pill.className = 'filter-pill custom-filter-pill';
+      pill.textContent = c.label;
+      pill.onclick = function() { setFilter(c.id, this); };
+      filterBar.insertBefore(pill, filterBar.querySelector('.search-input'));
+    });
+  }
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat"><div class="stat-label">Total técnicos</div><div class="stat-val">${total}</div><div class="stat-sub">na base de dados</div></div>
+    <div class="stat"><div class="stat-label">Sénior (≥80%)</div><div class="stat-val" style="color:var(--green)">${seniors}</div><div class="stat-sub">em pelo menos 1 área</div></div>
+    <div class="stat"><div class="stat-label">Confirmados CB</div><div class="stat-val" style="color:var(--blue)">${confirmed}</div><div class="stat-sub">no CrewBrain</div></div>
+    <div class="stat"><div class="stat-label">Avaliação média</div><div class="stat-val" style="color:var(--yd)">${avgStars}</div><div class="stat-sub">estrelas</div></div>
+  `;
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────────
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderGrid();
+}
+
+// ── GRID ──────────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const q = document.getElementById('search').value.toLowerCase();
+  let list = tecnicos;
+  if (currentFilter !== 'todos') {
+    if (currentFilter === 'senior') list = list.filter(t => Object.values(t.skills).some(v => v >= 80));
+    else if (currentFilter === 'avaliar') list = list.filter(t => t.needsEvaluation);
+    else list = list.filter(t => (t.skills[currentFilter] || 0) >= 40);
+  }
+  if (q) list = list.filter(t => t.name.toLowerCase().includes(q) || t.role.toLowerCase().includes(q));
+
+  const grid = document.getElementById('tecnico-grid');
+  if (list.length === 0) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;font-family:var(--mono);font-size:12px;color:var(--dim)">Sem técnicos encontrados.</div>'; return; }
+  grid.innerHTML = list.map(t => tecnicoCard(t)).join('');
+}
+
+function tecnicoCard(t) {
+  const initials = t.name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase();
+  const color = AVATAR_COLORS[Math.abs(Math.floor(t.id)) % AVATAR_COLORS.length];
+  const starsHtml = Array.from({length:5}, (_,i) =>
+    `<span class="star ${i < t.stars ? '' : 'empty'}" onclick="event.stopPropagation();setStarInline(${JSON.stringify(t.id)},${i+1})">★</span>`
+  ).join('');
+  const cbClass = {confirmed:'confirmed',pending:'pending',none:'none',declined:'none'}[t.cb] || 'none';
+  const cbLabel = {confirmed:'CB ✓',pending:'CB ?',none:'',declined:'CB ✗'}[t.cb] || '';
+
+  // Skills — all areas including custom
+  const allSkillAreas = [...AREAS, ...customCategories.map(c=>c.id)];
+  const activeSkills = allSkillAreas.filter(a => (t.skills[a] || 0) > 0);
+
+  // Skills bar (read mode)
+  const skillsBarsHtml = activeSkills.slice(0,4).map(a => {
+    const val = t.skills[a] || 0;
+    const aLbl = AREA_LABELS[a] || customCategories.find(c=>c.id===a)?.label || a;
+    const aClr = AREA_COLORS[a] || customCategories.find(c=>c.id===a)?.color || '#888';
+    const levelLabel = val >= 80 ? 'Sénior' : val >= 50 ? 'Mid' : 'Junior';
+    return `<div class="skill-row">
+      <span class="skill-label">${aLbl}</span>
+      <div class="skill-bar"><div class="skill-fill" style="width:${val}%;background:${aClr}"></div></div>
+      <span class="skill-level">${levelLabel}</span>
+    </div>`;
+  }).join('');
+
+  // Skills sliders (expanded edit mode)
+  const skillsSlidersHtml = allSkillAreas.map(a => {
+    const val = t.skills[a] || 0;
+    const aLbl = AREA_LABELS[a] || customCategories.find(c=>c.id===a)?.label || a;
+    const aClr = AREA_COLORS[a] || customCategories.find(c=>c.id===a)?.color || '#888';
+    const levelLabel = val >= 80 ? 'Sénior' : val >= 50 ? 'Mid' : 'Junior';
+    return `<div class="skill-edit-row-card">
+      <span class="skill-label-card">${aLbl}</span>
+      <input type="range" class="skill-slider-card" min="0" max="100" value="${val}"
+        style="accent-color:${aClr}"
+        oninput="updateCardSkill(${JSON.stringify(t.id)},'${a}',this.value,this)"
+        onclick="event.stopPropagation()">
+      <span class="skill-val-card" id="csv-${t.id}-${a}">${val}%</span>
+      <span class="skill-level-card" id="csl-${t.id}-${a}" style="color:${aClr};font-size:9px">${val>0?levelLabel:''}</span>
+    </div>`;
+  }).join('');
+
+  // Equip tags
+  const mainEquip = t.equip.filter(e => t.equipMain?.includes(e));
+  const otherEquip = t.equip.filter(e => !t.equipMain?.includes(e));
+  const equipHtml = [
+    ...mainEquip.map(e => `<span class="equip-tag main">${getAllEquipamentos().find(x=>x.id===e)?.label||e}</span>`),
+    ...otherEquip.slice(0,3).map(e => `<span class="equip-tag">${getAllEquipamentos().find(x=>x.id===e)?.label||e}</span>`),
+    otherEquip.length > 3 ? `<span class="equip-tag">+${otherEquip.length-3}</span>` : ''
+  ].join('');
+
+  const certsHtml = (t.certs||[]).map(c => `<span class="cert-tag">${c}</span>`).join('');
+
+  return `<div class="tecnico-card" id="tcard-${t.id}">
+    <div class="card-header" style="position:relative">
+      <div class="avatar" style="background:${color}">${initials}</div>
+      <div class="card-info" style="flex:1;min-width:0">
+        <div class="inline-field">
+          <input class="inline-input" value="${t.name}"
+            onclick="event.stopPropagation()"
+            onchange="updateCardField(${JSON.stringify(t.id)},'name',this.value,this)"
+            title="Clica para editar o nome">
+        </div>
+        <div class="inline-field">
+          <input class="inline-input role" value="${t.role||''}" placeholder="função..."
+            onclick="event.stopPropagation()"
+            onchange="updateCardField(${JSON.stringify(t.id)},'role',this.value,this)"
+            title="Clica para editar a função">
+        </div>
+        <div class="inline-field">
+          <input class="inline-input contact" value="${t.phone||''}" placeholder="contacto..."
+            onclick="event.stopPropagation()"
+            onchange="updateCardField(${JSON.stringify(t.id)},'phone',this.value,this)"
+            title="Clica para editar o contacto">
+        </div>
+      </div>
+      <div class="card-right">
+        <div class="stars">${starsHtml}</div>
+        ${cbLabel ? `<span class="cb-badge ${cbClass}">${cbLabel}</span>` : ''}
+        ${t.needsEvaluation ? '<span class="cb-badge pending">avaliar</span>' : ''}
+      </div>
+      <button class="card-edit-btn" onclick="event.stopPropagation();openModal(${JSON.stringify(t.id)})" title="Abrir perfil completo">✎</button>
+    </div>
+
+    ${activeSkills.length > 0 ? `<div class="card-skills">${skillsBarsHtml}</div>` : ''}
+
+    <button class="expand-skills-btn" id="eskbtn-${t.id}" onclick="event.stopPropagation();toggleCardSkills(${JSON.stringify(t.id)})">
+      <span>Editar competências (${allSkillAreas.length})</span>
+      <span class="arrow">▾</span>
+    </button>
+
+    <div class="skills-expanded" id="eskp-${t.id}" onclick="event.stopPropagation()">
+      ${skillsSlidersHtml}
+      <div class="card-save-bar show" style="margin:10px -0px -14px;border-radius:0 0 10px 10px">
+        <span class="card-save-label">Competências actualizadas</span>
+        <button class="card-cancel-btn" onclick="cancelCardSkills(${JSON.stringify(t.id)})">Cancelar</button>
+        <button class="card-save-btn" onclick="saveCardSkills(${JSON.stringify(t.id)})">Guardar</button>
+      </div>
+    </div>
+
+    ${t.equip.length > 0 ? `<div class="card-equip">${equipHtml}</div>` : ''}
+    ${(t.certs||[]).length > 0 ? `<div class="card-certs">${certsHtml}</div>` : ''}
+  </div>`;
+}
+
+
+function openModal(id) {
+  editingId = id || null;
+  const t = id ? tecnicos.find(x=>x.id===id) : null;
+
+  // Fill form
+  document.getElementById('f-name').value = t?.name || '';
+  document.getElementById('f-role').value = t?.role || '';
+  document.getElementById('f-phone').value = t?.phone || '';
+  document.getElementById('f-email').value = t?.email || '';
+  document.getElementById('f-cb').value = t?.cb || 'none';
+  document.getElementById('f-notes').value = t?.notes || '';
+
+  // Stars
+  currentStar = t?.stars || 0;
+  renderStars();
+
+  // Skills
+  AREAS.forEach(a => {
+    const el = document.getElementById('sk-' + a);
+    const val = t?.skills?.[a] || 0;
+    el.value = val;
+    document.getElementById('skv-' + a).textContent = val + '%';
+  });
+
+  // Equipamentos
+  currentEquip = new Set(t?.equip || []);
+  currentEquipMain = new Set(t?.equipMain || []);
+  renderEquipEditor();
+
+  // Certs
+  currentCerts = [...(t?.certs || [])];
+  renderCerts();
+
+  // Header
+  updateModalHeader();
+  document.getElementById('btn-delete').style.display = id ? 'block' : 'none';
+
+  // Inject custom category sliders
+  injectCustomSliders();
+  // Restore custom skill values
+  customCategories.forEach(c => {
+    const el = document.getElementById('sk-' + c.id);
+    const val = t?.skills?.[c.id] || 0;
+    if (el) { el.value = val; document.getElementById('skv-' + c.id).textContent = val + '%'; }
+  });
+  // Fill area select for custom equip
+  renderEquipAreaSelect();
+  // Reset cat manager
+  const catSection = document.getElementById('cat-manager-section');
+  if (catSection) catSection.style.display = 'none';
+
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+function maybeClose(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+function updateModalHeader() {
+  const name = document.getElementById('f-name').value || 'Novo Técnico';
+  const role = document.getElementById('f-role').value || 'Preenche os dados abaixo';
+  document.getElementById('modal-title-name').textContent = name;
+  document.getElementById('modal-title-role').textContent = role;
+  const initials = name.split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase() || '?';
+  const color = AVATAR_COLORS[(editingId || tecnicos.length) % AVATAR_COLORS.length];
+  document.getElementById('modal-avatar').textContent = initials;
+  document.getElementById('modal-avatar').style.background = color;
+}
+
+function setStar(n) { currentStar = n; renderStars(); }
+function renderStars() {
+  document.querySelectorAll('.star-edit').forEach((el, i) => {
+    el.classList.toggle('on', i < currentStar);
+  });
+}
+
+function renderEquipEditor() {
+  const allEquip = getAllEquipamentos();
+  const allAreas = getAllAreas();
+  const areas = [...new Set(allEquip.map(e=>e.area))];
+  let html = '';
+  areas.forEach(area => {
+    const areaInfo = allAreas.find(a=>a.id===area) || { id:area, label:area, color:'#888' };
+    const items = allEquip.filter(e=>e.area===area);
+    html += `<div style="width:100%;font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;margin:6px 0 4px">${areaInfo.label}</div>`;
+    html += items.map(e => {
+      const isOn = currentEquip.has(e.id);
+      const isMain = currentEquipMain.has(e.id);
+      const cls = isMain ? 'main-on' : isOn ? 'on' : '';
+      return `<div class="equip-toggle ${cls}" onclick="toggleEquip('${e.id}')">${e.label}</div>`;
+    }).join('');
+  });
+  document.getElementById('equip-editor').innerHTML = html;
+}
+
+function toggleEquip(id) {
+  if (currentEquipMain.has(id)) { currentEquipMain.delete(id); currentEquip.delete(id); }
+  else if (currentEquip.has(id)) { currentEquipMain.add(id); }
+  else { currentEquip.add(id); }
+  renderEquipEditor();
+}
+
+function updateSkillVal(area, val) { document.getElementById('skv-' + area).textContent = val + '%'; }
+
+function addCert() {
+  const inp = document.getElementById('cert-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  currentCerts.push(val);
+  inp.value = '';
+  renderCerts();
+}
+
+function removeCert(i) { currentCerts.splice(i, 1); renderCerts(); }
+
+function renderCerts() {
+  document.getElementById('cert-list').innerHTML = currentCerts.map((c, i) =>
+    `<div class="cert-item"><span>${c}</span><button onclick="removeCert(${i})">×</button></div>`
+  ).join('');
+}
+
+function saveTecnico() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { notify('Introduz o nome do técnico'); return; }
+  const skills = {};
+  AREAS.forEach(a => { skills[a] = parseInt(document.getElementById('sk-' + a)?.value || 0); });
+  customCategories.forEach(c => { const el = document.getElementById('sk-' + c.id); if (el) skills[c.id] = parseInt(el.value); });
+
+  const data = {
+    id: editingId || Date.now(),
+    name, role: document.getElementById('f-role').value,
+    phone: document.getElementById('f-phone').value,
+    email: document.getElementById('f-email').value,
+    cb: document.getElementById('f-cb').value,
+    stars: currentStar, notes: document.getElementById('f-notes').value,
+    skills, equip: [...currentEquip], equipMain: [...currentEquipMain],
+    certs: [...currentCerts],
+  };
+
+  data.needsEvaluation = false;
+  data.fromDemo = false;
+  if (editingId) {
+    const idx = tecnicos.findIndex(t=>t.id===editingId);
+    tecnicos[idx] = data;
+    notify('Perfil actualizado');
+  } else {
+    tecnicos.push(data);
+    notify('Técnico adicionado');
+  }
+  save(); closeModal(); renderStats(); renderGrid();
+}
+
+function deleteTecnico() {
+  if (!confirm('Eliminar este técnico?')) return;
+  tecnicos = tecnicos.filter(t=>t.id!==editingId);
+  save(); closeModal(); renderStats(); renderGrid(); notify('Técnico eliminado');
+}
+
+// ── CUSTOM CATEGORIES & EQUIPMENT ────────────────────────────────────────────
+// Load persisted custom data
+let customCategories = JSON.parse(localStorage.getItem('ep-custom-cats') || '[]');
+let customEquipamentos = JSON.parse(localStorage.getItem('ep-custom-equip') || '[]');
+
+function saveCustomData() {
+  localStorage.setItem('ep-custom-cats', JSON.stringify(customCategories));
+  localStorage.setItem('ep-custom-equip', JSON.stringify(customEquipamentos));
+}
+
+function getAllAreas() {
+  const builtIn = AREAS.map(id => ({ id, label: AREA_LABELS[id], color: AREA_COLORS[id] }));
+  return [...builtIn, ...customCategories];
+}
+
+function getAllEquipamentos() {
+  return [...EQUIPAMENTOS, ...customEquipamentos];
+}
+
+function addCustomCategory() {
+  const id = document.getElementById('new-cat-id').value.trim().replace(/\s+/g, '-').toLowerCase();
+  const label = document.getElementById('new-cat-label').value.trim();
+  const color = document.getElementById('new-cat-color').value;
+  if (!id || !label) { notify('Preenche o ID e o nome da categoria'); return; }
+  if (getAllAreas().find(a => a.id === id)) { notify('Essa categoria já existe'); return; }
+  customCategories.push({ id, label, color });
+  saveCustomData();
+  renderCustomCatList();
+  renderEquipAreaSelect();
+  // Add slider to modal
+  addSkillSlider(id, label);
+  document.getElementById('new-cat-id').value = '';
+  document.getElementById('new-cat-label').value = '';
+  notify('Categoria "' + label + '" adicionada');
+}
+
+function removeCustomCategory(id) {
+  customCategories = customCategories.filter(c => c.id !== id);
+  customEquipamentos = customEquipamentos.filter(e => e.area !== id);
+  saveCustomData();
+  renderCustomCatList();
+  renderEquipAreaSelect();
+  // Remove slider from modal
+  const row = document.getElementById('skrow-' + id);
+  if (row) row.remove();
+  renderEquipEditor();
+  notify('Categoria removida');
+}
+
+function renderCustomCatList() {
+  const list = document.getElementById('custom-cat-list');
+  if (!list) return;
+  list.innerHTML = customCategories.length === 0
+    ? '<span style="font-family:var(--mono);font-size:10px;color:var(--dim)">Nenhuma categoria personalizada ainda.</span>'
+    : customCategories.map(c => `
+      <div class="cat-tag" style="background:${c.color}22;border:1px solid ${c.color}55">
+        <span style="color:${c.color};font-weight:500">${c.label}</span>
+        <span style="font-family:var(--mono);font-size:9px;color:${c.color}88"> (${c.id})</span>
+        <button onclick="removeCustomCategory('${c.id}')" style="color:${c.color}">×</button>
+      </div>`).join('');
+}
+
+function addCustomEquip() {
+  const label = document.getElementById('custom-equip-input').value.trim();
+  const area = document.getElementById('custom-equip-area').value;
+  if (!label) { notify('Escreve o nome do equipamento ou função'); return; }
+  const id = 'custom-' + label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (getAllEquipamentos().find(e => e.id === id)) { notify('Já existe'); return; }
+  const newEquip = { id, label, area: area || 'geral', custom: true };
+  customEquipamentos.push(newEquip);
+  saveCustomData();
+  currentEquip.add(id);
+  document.getElementById('custom-equip-input').value = '';
+  renderEquipEditor();
+  notify('"' + label + '" adicionado');
+}
+
+function renderEquipAreaSelect() {
+  const sel = document.getElementById('custom-equip-area');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">-- Área --</option>' +
+    getAllAreas().map(a => `<option value="${a.id}">${a.label}</option>`).join('');
+}
+
+function addSkillSlider(id, label) {
+  const editor = document.querySelector('.skill-editor');
+  if (!editor || document.getElementById('sk-' + id)) return;
+  const div = document.createElement('div');
+  div.className = 'skill-edit-row';
+  div.id = 'skrow-' + id;
+  div.innerHTML = `<span class="skill-edit-label">${label}</span>
+    <input type="range" class="skill-slider" id="sk-${id}" min="0" max="100" value="0" oninput="updateSkillVal('${id}',this.value)">
+    <span class="skill-edit-val" id="skv-${id}">0%</span>`;
+  editor.appendChild(div);
+}
+
+function injectCustomSliders() {
+  customCategories.forEach(c => addSkillSlider(c.id, c.label));
+}
+
+function toggleCatManager() {
+  const section = document.getElementById('cat-manager-section');
+  section.style.display = section.style.display === 'none' ? 'block' : 'none';
+  if (section.style.display === 'block') {
+    renderCustomCatList();
+    renderEquipAreaSelect();
+  }
+}
+
+// ── COPILOT EXPORT ────────────────────────────────────────────────────────────
+function exportToCopilot() {
+  const teamProfile = tecnicos.map(t => {
+    const topSkills = AREAS.filter(a => (t.skills[a]||0) >= 50).map(a => `${AREA_LABELS[a]} (${t.skills[a]}%)`).join(', ');
+    const mainEquip = t.equip.filter(e=>t.equipMain?.includes(e)).map(e=>getAllEquipamentos().find(x=>x.id===e)?.label||e).join(', ');
+    const level = Math.max(...Object.values(t.skills)) >= 80 ? 'Sénior' : Math.max(...Object.values(t.skills)) >= 50 ? 'Mid' : 'Junior';
+    return `${t.name} (${t.role}) — ${level} — Avaliação: ${t.stars}/5 — Competências: ${topSkills||'—'} — Equip. principal: ${mainEquip||'—'} — Certs: ${(t.certs||[]).join(', ')||'—'}`;
+  }).join('\n');
+
+  const ctx = { teamProfiles: teamProfile };
+  const encoded = btoa(encodeURIComponent(JSON.stringify(ctx)));
+  window.open(`index.html?team=${encoded}`, '_blank');
+  notify('A lançar co-piloto com perfis da equipa...');
+}
+
+// ── NOTIFY ────────────────────────────────────────────────────────────────────
+function notify(msg) {
+  const n = document.getElementById('notif');
+  n.textContent = msg; n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 2800);
+}
+
+// ── INLINE EDITING ───────────────────────────────────────────────────────────
+function updateCardField(id, field, value, inputEl) {
+  const t = tecnicos.find(x => x.id == id);
+  if (!t) return;
+  t[field] = value;
+  t.needsEvaluation = false;
+  save();
+  notify('✓ ' + (field === 'name' ? 'Nome' : field === 'role' ? 'Função' : 'Contacto') + ' actualizado');
+  inputEl.blur();
+  renderStats();
+}
+
+function setStarInline(id, n) {
+  const t = tecnicos.find(x => x.id == id);
+  if (!t) return;
+  t.stars = n;
+  save();
+  renderGrid();
+  renderStats();
+}
+
+// Card skills expand/collapse
+let cardSkillsBackup = {};
+
+function toggleCardSkills(id) {
+  const panel = document.getElementById('eskp-' + id);
+  const btn = document.getElementById('eskbtn-' + id);
+  const isOpen = panel.classList.contains('show');
+  // Backup current values if opening
+  if (!isOpen) {
+    const t = tecnicos.find(x => x.id == id);
+    cardSkillsBackup[id] = { ...t.skills };
+  }
+  panel.classList.toggle('show', !isOpen);
+  btn.classList.toggle('open', !isOpen);
+}
+
+function updateCardSkill(id, area, value, sliderEl) {
+  const val = parseInt(value);
+  document.getElementById('csv-' + id + '-' + area).textContent = val + '%';
+  const lvlEl = document.getElementById('csl-' + id + '-' + area);
+  if (lvlEl) {
+    const aClr = AREA_COLORS[area] || customCategories.find(c=>c.id===area)?.color || '#888';
+    lvlEl.style.color = aClr;
+    lvlEl.textContent = val >= 80 ? 'Sénior' : val >= 50 ? 'Mid' : val > 0 ? 'Junior' : '';
+  }
+  // Update in memory (not saved yet)
+  const t = tecnicos.find(x => x.id == id);
+  if (t) { if (!t.skills) t.skills = {}; t.skills[area] = val; }
+}
+
+function saveCardSkills(id) {
+  const t = tecnicos.find(x => x.id == id);
+  if (!t) return;
+  t.needsEvaluation = false;
+  t.fromDemo = false;
+  delete cardSkillsBackup[id];
+  save();
+  toggleCardSkills(id);
+  renderStats();
+  renderGrid();
+  notify('✓ Competências guardadas');
+}
+
+function cancelCardSkills(id) {
+  // Restore backup
+  const t = tecnicos.find(x => x.id == id);
+  if (t && cardSkillsBackup[id]) {
+    t.skills = { ...cardSkillsBackup[id] };
+    delete cardSkillsBackup[id];
+  }
+  toggleCardSkills(id);
+  renderGrid();
+}
+
+// ── CREWBRAIN INTEGRATION ────────────────────────────────────────────────────
+const CB_URL_KEY = 'ep-cb-url';
+const CB_AUTH_KEY = 'ep-cb-auth';
+const CB_EVENTID_KEY = 'ep-cb-eventid';
+
+function getCBConfig() {
+  return {
+    url: localStorage.getItem(CB_URL_KEY) || '',
+    auth: localStorage.getItem(CB_AUTH_KEY) || '',
+    eventId: localStorage.getItem(CB_EVENTID_KEY) || '',
+  };
+}
+
+function showCBConfig() {
+  const cfg = getCBConfig();
+  document.getElementById('cfg-cb-url').value = cfg.url || 'https://app.crewbrain.net/api';
+  document.getElementById('cfg-cb-auth').value = cfg.auth || '';
+  document.getElementById('cfg-cb-eventid').value = cfg.eventId || '';
+  document.getElementById('cb-config-panel').style.display = 'block';
+}
+
+function hideCBConfig() {
+  document.getElementById('cb-config-panel').style.display = 'none';
+}
+
+function saveCBConfig() {
+  localStorage.setItem(CB_URL_KEY, document.getElementById('cfg-cb-url').value.trim());
+  localStorage.setItem(CB_AUTH_KEY, document.getElementById('cfg-cb-auth').value.trim());
+  localStorage.setItem(CB_EVENTID_KEY, document.getElementById('cfg-cb-eventid').value.trim());
+  hideCBConfig();
+  syncNow();
+}
+
+function setCBStatus(state, text) {
+  const dot = document.getElementById('cb-dot');
+  const label = document.getElementById('cb-label');
+  const colors = { ok:'#1E7A4A', err:'#C0392B', loading:'#8A6E00', off:'rgba(17,17,17,0.4)' };
+  dot.style.background = colors[state] || colors.off;
+  dot.style.boxShadow = state === 'ok' ? '0 0 6px rgba(30,122,74,0.4)' : 'none';
+  dot.style.animation = state === 'loading' ? 'none' : 'none';
+  if (label) label.textContent = text;
+}
+
+async function syncNow() {
+  const cfg = getCBConfig();
+  if (!cfg.url || !cfg.auth) { setCBStatus('off', 'CrewBrain — configurar'); return; }
+
+  setCBStatus('loading', 'A sincronizar...');
+  document.getElementById('btn-sync').textContent = '↻ ...';
+
+  try {
+    const headers = { 'Authorization': 'Basic ' + btoa(cfg.auth), 'Accept': 'application/json' };
+    let staff = [];
+
+    if (cfg.eventId) {
+      // Fetch staff for specific event
+      const res = await fetch(`${cfg.url}/events/${cfg.eventId}/resources/allNamesInEvent`, { headers });
+      if (!res.ok) throw new Error('Evento não encontrado (' + res.status + ')');
+      const data = await res.json();
+      staff = parseStaff(Array.isArray(data) ? data : (data.resources || data.staff || data.data || []));
+    }
+
+    // Also try to fetch general staff pool
+    try {
+      const resAll = await fetch(`${cfg.url}/contacts?type=staff&limit=200`, { headers });
+      if (resAll.ok) {
+        const dataAll = await resAll.json();
+        const allStaff = parseStaff(Array.isArray(dataAll) ? dataAll : (dataAll.contacts || dataAll.staff || dataAll.data || []));
+        // Merge: event staff + general pool, deduplicate by name
+        const names = new Set(staff.map(s => s.name));
+        allStaff.forEach(s => { if (!names.has(s.name)) { staff.push({ ...s, fromPool: true }); names.add(s.name); } });
+      }
+    } catch(e) { /* pool fetch optional */ }
+
+    if (staff.length === 0) throw new Error('Nenhum técnico encontrado');
+
+    mergeWithLocalProfiles(staff);
+    const now = new Date();
+    const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    setCBStatus('ok', `CrewBrain · ${staff.length} pessoas · ${timeStr}`);
+    document.getElementById('btn-sync').textContent = '↻ Sync';
+    renderStats(); renderGrid();
+    notify(`✓ ${staff.length} técnicos sincronizados do CrewBrain`);
+
+  } catch(e) {
+    // Demo mode fallback
+    if (tecnicos.length === 0 || tecnicos.every(t => t.fromDemo)) {
+      loadDemoData();
+    }
+    setCBStatus('err', 'CrewBrain — erro de ligação');
+    document.getElementById('btn-sync').textContent = '↻ Sync';
+    document.getElementById('cb-config-status').textContent = 'Erro: ' + e.message + '. A usar dados locais.';
+    renderStats(); renderGrid();
+  }
+}
+
+function parseStaff(items) {
+  return items.map(item => ({
+    cbId: item.id || item.resourceId || item.contactId || null,
+    name: (item.name || item.fullName || ((item.firstName || '') + ' ' + (item.lastName || '')).trim() || 'Sem nome').trim(),
+    role: item.role || item.function || item.jobTitle || item.position || item.department || '',
+    phone: item.phone || item.mobile || item.telephone || '',
+    email: item.email || '',
+    cb: normalizeStatus(item.status || item.confirmationStatus || item.bookingStatus || ''),
+  }));
+}
+
+function normalizeStatus(s) {
+  if (!s) return 'none';
+  const sl = s.toLowerCase();
+  if (sl.includes('confirm') || sl === 'yes' || sl === '1' || sl === 'accepted') return 'confirmed';
+  if (sl.includes('declin') || sl === 'no' || sl === '0' || sl === 'rejected') return 'declined';
+  return 'pending';
+}
+
+function mergeWithLocalProfiles(cbStaff) {
+  // For each CB person: if already in local DB (match by name or cbId), update CB fields only
+  // If new, create minimal profile so user can fill in competencies
+  const updated = new Set();
+
+  cbStaff.forEach(cbPerson => {
+    // Try to match by cbId first, then by name
+    let existing = tecnicos.find(t => t.cbId && t.cbId === cbPerson.cbId);
+    if (!existing) existing = tecnicos.find(t => t.name.toLowerCase() === cbPerson.name.toLowerCase());
+
+    if (existing) {
+      // Update CB-sourced fields only, preserve local evaluations
+      existing.cbId = cbPerson.cbId;
+      existing.cb = cbPerson.cb;
+      if (!existing.role && cbPerson.role) existing.role = cbPerson.role;
+      if (!existing.phone && cbPerson.phone) existing.phone = cbPerson.phone;
+      if (!existing.email && cbPerson.email) existing.email = cbPerson.email;
+      updated.add(existing.id);
+    } else {
+      // New person from CrewBrain — create profile with empty evaluations
+      const newProfile = {
+        id: Date.now() + Math.random(),
+        cbId: cbPerson.cbId,
+        name: cbPerson.name,
+        role: cbPerson.role,
+        phone: cbPerson.phone,
+        email: cbPerson.email,
+        cb: cbPerson.cb,
+        stars: 0,
+        notes: '',
+        skills: {},
+        equip: [],
+        equipMain: [],
+        certs: [],
+        fromCB: true,
+        needsEvaluation: true,
+      };
+      AREAS.forEach(a => { newProfile.skills[a] = 0; });
+      tecnicos.push(newProfile);
+    }
+  });
+
+  save();
+}
+
+function loadDemoData() {
+  if (tecnicos.length > 0) return;
+  tecnicos = [
+    { id:1, cbId:null, name:'Bruno Domingos', role:'Gestor de Projeto', phone:'961 026 466', email:'bruno@europalco.pt', cb:'confirmed', stars:5, notes:'GP principal. Gestão operacional, comunicação com cliente e coordenação total.', skills:{som:60,luz:40,video:50,automatismos:20,estruturas:30,logistica:30,producao:100,criativo:20,seguranca:40}, equip:['yamaha-ql1','dante','show-caller','stage-manager'], equipMain:['producao','show-caller'], certs:['Dante Level 3','Shure Wireless','Yamaha ProAV Specialist L2'], fromDemo:true },
+    { id:2, cbId:null, name:'Luís Pinto', role:'Responsável de Estruturas', phone:'', email:'', cb:'confirmed', stars:4, notes:'Muito fiável em montagens complexas.', skills:{som:0,luz:10,video:0,automatismos:20,estruturas:95,logistica:40,producao:30,criativo:0,seguranca:60}, equip:['rigger','tec-estruturas','carpinteiro','cablagem','stagehand'], equipMain:['rigger','tec-estruturas'], certs:['Trabalho em Altura','EPI Nível 2'], fromDemo:true },
+    { id:3, cbId:null, name:'Ricardo Pinto', role:'Técnico de Som', phone:'', email:'', cb:'confirmed', stars:5, notes:'Especialista FOH.', skills:{som:95,luz:15,video:10,automatismos:0,estruturas:20,logistica:0,producao:20,criativo:0,seguranca:10}, equip:['yamaha-ql1','yamaha-ql5','dante','tec-som'], equipMain:['yamaha-ql5','dante'], certs:['Dante Level 3','Yamaha ProAV Specialist L2'], fromDemo:true },
+    { id:4, cbId:null, name:'Sara Rodrigues', role:'Responsável de Iluminação', phone:'', email:'', cb:'confirmed', stars:4, notes:'Programação criativa e rápida.', skills:{som:10,luz:90,video:20,automatismos:30,estruturas:15,logistica:0,producao:30,criativo:20,seguranca:10}, equip:['op-ma','op-avolites','op-hog','tec-luz'], equipMain:['op-ma','op-avolites'], certs:['GrandMA2 Certified'], fromDemo:true },
+    { id:5, cbId:null, name:'Miguel Costa', role:'Responsável de Vídeo', phone:'', email:'', cb:'confirmed', stars:4, notes:'Forte em LED Wall e switching.', skills:{som:10,luz:20,video:88,automatismos:40,estruturas:20,logistica:0,producao:25,criativo:30,seguranca:10}, equip:['op-barco-e2','op-ledwall','op-resolume','op-spyder','op-pixelhue','tec-video'], equipMain:['op-barco-e2','op-ledwall'], certs:['Barco E2 Operator'], fromDemo:true },
+    { id:6, cbId:null, name:'Pedro Alves', role:'Técnico de Estruturas', phone:'', email:'', cb:'pending', stars:3, notes:'Bom nas montagens básicas.', skills:{som:0,luz:0,video:0,automatismos:25,estruturas:65,logistica:30,producao:10,criativo:0,seguranca:20}, equip:['tec-estruturas','cablagem','stagehand'], equipMain:['tec-estruturas'], certs:['EPI Básico'], fromDemo:true },
+  ];
+  save();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+// Remove old demo data if it was the default seeded data (let CB take over)
+if (tecnicos.length > 0 && tecnicos.every(t => t.fromDemo) && getCBConfig().auth) {
+  tecnicos = [];
+  save();
+}
+// If no local data and no CB config, load demo
+if (tecnicos.length === 0 && !getCBConfig().auth) {
+  loadDemoData();
+}
+renderStats();
+renderGrid();
+// Auto-sync on load
+const cbCfg = getCBConfig();
+if (cbCfg.url && cbCfg.auth) {
+  syncNow();
+} else {
+  setCBStatus('off', 'CrewBrain — configurar ⚙');
+}
+</script>
+</body>
+</html>
