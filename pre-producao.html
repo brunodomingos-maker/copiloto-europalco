@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Europalco — Plataforma de Produção</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --y: #F2C200; --yd: #8A6E00; --yl: rgba(242,194,0,0.12); --ym: rgba(242,194,0,0.4);
+  --bg: #F8F7F4; --card: #FFFFFF; --border: rgba(0,0,0,0.08); --border2: rgba(0,0,0,0.14);
+  --text: #111111; --dim: rgba(17,17,17,0.42); --mid: rgba(17,17,17,0.65);
+  --green: #1E7A4A; --red: #C0392B; --blue: #1A5CA8;
+  --mono: 'DM Mono', monospace; --sans: 'Syne', sans-serif;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+/* ── LAYOUT ── */
+.app { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 220px; background: #111; flex-shrink: 0; display: flex; flex-direction: column; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { height: 56px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+.content::-webkit-scrollbar { width: 4px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── SIDEBAR ── */
+.sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.sidebar-logo-text { font-family: var(--sans); font-weight: 800; font-size: 14px; letter-spacing: 0.16em; color: var(--y); }
+.sidebar-logo-sub { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0.08em; margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 7px; cursor: pointer; transition: all 0.15s; font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.45); letter-spacing: 0.04em; -webkit-tap-highlight-color: transparent; }
+.nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.75); }
+.nav-item.active { background: var(--yl); color: var(--y); }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nav-section { font-family: var(--mono); font-size: 8px; letter-spacing: 0.18em; color: rgba(255,255,255,0.2); text-transform: uppercase; padding: 14px 10px 6px; }
+.sidebar-bottom { padding: 12px 8px; border-top: 1px solid rgba(255,255,255,0.07); }
+.copilot-btn { width: 100%; padding: 11px 10px; background: var(--y); border: none; border-radius: 8px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: #111; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: opacity 0.2s; letter-spacing: 0.02em; }
+.copilot-btn:hover { opacity: 0.9; }
+.copilot-btn svg { width: 14px; height: 14px; }
+
+/* ── TOPBAR ── */
+.topbar-title { font-family: var(--sans); font-weight: 700; font-size: 15px; color: var(--text); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.sheets-status { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; color: var(--dim); padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+.sheets-status:hover { border-color: var(--border2); color: var(--mid); }
+.sheets-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); transition: all 0.2s; }
+.sheets-dot.ok { background: var(--green); box-shadow: 0 0 5px rgba(30,122,74,0.4); }
+.btn-sm { padding: 7px 14px; background: var(--y); border: none; border-radius: 7px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: #111; cursor: pointer; transition: opacity 0.15s; }
+.btn-sm:hover { opacity: 0.85; }
+
+/* ── CARDS & SECTIONS ── */
+.section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; color: var(--dim); text-transform: uppercase; margin-bottom: 12px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+.stat-label { font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 0.06em; margin-bottom: 6px; }
+.stat-value { font-family: var(--sans); font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
+.stat-sub { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 4px; }
+.stat-value.yellow { color: var(--yd); }
+.stat-value.red { color: var(--red); }
+.stat-value.green { color: var(--green); }
+
+/* ── PROJECT LIST ── */
+.project-list { display: flex; flex-direction: column; gap: 8px; }
+.project-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.15s; }
+.project-item:hover { border-color: var(--border2); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.project-item.active-event { border-color: var(--ym); background: var(--yl); }
+.project-color { width: 4px; height: 44px; border-radius: 2px; flex-shrink: 0; }
+.project-info { flex: 1; min-width: 0; }
+.project-name { font-family: var(--sans); font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.project-meta { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 3px; }
+.project-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
+.badge { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.06em; }
+.badge.prep { background: rgba(26,92,168,0.1); color: var(--blue); border: 1px solid rgba(26,92,168,0.2); }
+.badge.active { background: var(--yl); color: var(--yd); border: 1px solid var(--ym); }
+.badge.done { background: rgba(30,122,74,0.1); color: var(--green); border: 1px solid rgba(30,122,74,0.2); }
+.badge.urgent { background: rgba(192,57,43,0.1); color: var(--red); border: 1px solid rgba(192,57,43,0.2); }
+.pending-count { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+.pending-count span { color: var(--red); font-weight: 500; }
+
+/* ── PENDENTES ── */
+.pending-list { display: flex; flex-direction: column; gap: 6px; }
+.pending-item { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 11px 14px; display: flex; align-items: flex-start; gap: 12px; }
+.pending-item.resolved { opacity: 0.45; }
+.check-box { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid var(--border2); flex-shrink: 0; margin-top: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.check-box.checked { background: var(--green); border-color: var(--green); }
+.check-box.checked::after { content: '✓'; color: white; font-size: 11px; }
+.pending-body { flex: 1; min-width: 0; }
+.pending-title { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text); }
+.pending-detail { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 3px; line-height: 1.5; }
+.pending-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.priority { font-family: var(--mono); font-size: 9px; padding: 2px 6px; border-radius: 4px; }
+.priority.high { background: rgba(192,57,43,0.1); color: var(--red); border: 1px solid rgba(192,57,43,0.2); }
+.priority.med { background: var(--yl); color: var(--yd); border: 1px solid var(--ym); }
+.priority.low { background: rgba(0,0,0,0.04); color: var(--dim); border: 1px solid var(--border); }
+.assigned { font-family: var(--mono); font-size: 9px; color: var(--dim); }
+.deadline { font-family: var(--mono); font-size: 9px; color: var(--dim); }
+.deadline.overdue { color: var(--red); }
+
+/* ── TIMELINE EDITOR ── */
+.timeline-editor { display: flex; flex-direction: column; gap: 6px; }
+.tl-row { display: flex; gap: 8px; align-items: center; }
+.tl-input-time { width: 72px; padding: 7px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; }
+.tl-input-time:focus { border-color: var(--ym); }
+.tl-input-desc { flex: 1; padding: 7px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; }
+.tl-input-desc:focus { border-color: var(--ym); }
+.tl-dept { width: 110px; padding: 7px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--text); outline: none; }
+.tl-remove { width: 28px; height: 28px; background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--dim); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+.tl-remove:hover { background: rgba(192,57,43,0.08); border-color: rgba(192,57,43,0.3); color: var(--red); }
+.tl-add { padding: 7px 14px; background: none; border: 1px dashed var(--border2); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--dim); cursor: pointer; transition: all 0.15s; width: 100%; text-align: left; }
+.tl-add:hover { border-color: var(--ym); color: var(--yd); background: var(--yl); }
+
+/* ── FORM ── */
+.field { margin-bottom: 14px; }
+.field label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; color: var(--dim); text-transform: uppercase; display: block; margin-bottom: 5px; }
+.field input, .field textarea, .field select { width: 100%; padding: 9px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 12px; color: var(--text); outline: none; transition: border-color 0.2s; }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--ym); }
+.field textarea { min-height: 80px; resize: vertical; line-height: 1.5; }
+.field select { cursor: pointer; }
+
+/* ── DOCS ── */
+.doc-list { display: flex; flex-direction: column; gap: 6px; }
+.doc-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+.doc-icon { width: 32px; height: 32px; border-radius: 6px; background: var(--yl); border: 1px solid var(--ym); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.doc-info { flex: 1; }
+.doc-name { font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text); }
+.doc-meta { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 2px; }
+.doc-actions { display: flex; gap: 6px; }
+.doc-btn { padding: 4px 10px; background: none; border: 1px solid var(--border); border-radius: 5px; font-family: var(--mono); font-size: 10px; color: var(--dim); cursor: pointer; transition: all 0.15s; }
+.doc-btn:hover { border-color: var(--border2); color: var(--text); }
+.doc-btn.primary { background: var(--y); border-color: var(--y); color: #111; font-weight: 500; }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.modal-overlay.show { opacity: 1; pointer-events: all; }
+.modal { background: var(--card); border-radius: 14px; padding: 24px; width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto; transform: translateY(8px); transition: transform 0.2s; }
+.modal-overlay.show .modal { transform: translateY(0); }
+.modal-title { font-family: var(--sans); font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+.modal-sub { font-family: var(--mono); font-size: 11px; color: var(--dim); margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.btn-cancel { flex: 1; padding: 10px; background: none; border: 1px solid var(--border); border-radius: 8px; font-family: var(--mono); font-size: 12px; color: var(--dim); cursor: pointer; }
+.btn-confirm { flex: 2; padding: 10px; background: var(--y); border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px; font-weight: 700; color: #111; cursor: pointer; }
+
+/* ── COPILOT LAUNCH ── */
+.launch-card { background: #111; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
+.launch-icon { width: 44px; height: 44px; background: var(--y); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 20px; }
+.launch-info { flex: 1; }
+.launch-title { font-family: var(--sans); font-size: 15px; font-weight: 700; color: #fff; }
+.launch-sub { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 3px; }
+.launch-btn { padding: 10px 18px; background: var(--y); border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px; font-weight: 700; color: #111; cursor: pointer; white-space: nowrap; transition: opacity 0.15s; }
+.launch-btn:hover { opacity: 0.9; }
+
+/* ── SHEETS CONFIG ── */
+.sheets-config { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+.sheets-config-title { font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 40px 20px; font-family: var(--mono); font-size: 12px; color: var(--dim); line-height: 1.6; }
+
+/* ── NOTIFICATION ── */
+.notif { position: fixed; bottom: 24px; right: 24px; background: #111; color: #fff; font-family: var(--mono); font-size: 12px; padding: 12px 18px; border-radius: 8px; border-left: 3px solid var(--y); opacity: 0; transform: translateY(8px); transition: all 0.25s; z-index: 300; max-width: 300px; line-height: 1.4; }
+.notif.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">EUROPALCO</div>
+      <div class="sidebar-logo-sub">Plataforma de Produção</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Geral</div>
+      <div class="nav-item active" onclick="showView('dashboard')" id="nav-dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="showView('projects')" id="nav-projects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Projetos
+      </div>
+      <div class="nav-section">Produção</div>
+      <div class="nav-item" onclick="showView('pendentes')" id="nav-pendentes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pendentes
+      </div>
+      <div class="nav-item" onclick="showView('timeline')" id="nav-timeline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Timeline
+      </div>
+      <div class="nav-item" onclick="showView('docs')" id="nav-docs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Documentos
+      </div>
+      <div class="nav-section">Configuração</div>
+      <div class="nav-item" onclick="showView('config')" id="nav-config">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        Google Sheets
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="copilot-btn" onclick="launchCopilot()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M12 8v4l3 3"/></svg>
+        Lançar Co-piloto
+      </button>
+    </div>
+  </div>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <div class="sheets-status" onclick="showView('config')" title="Configurar Google Sheets">
+          <div class="sheets-dot" id="sheets-dot"></div>
+          <span id="sheets-label">Google Sheets</span>
+        </div>
+        <button class="btn-sm" onclick="showNewProjectModal()">+ Novo Projeto</button>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- Dynamic content injected here -->
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-inner">
+    <div class="modal-title" id="modal-title">Novo Projeto</div>
+    <div class="modal-sub" id="modal-sub">Preenche os dados do evento</div>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" id="modal-confirm" onclick="confirmModal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let state = {
+  currentView: 'dashboard',
+  currentProject: null,
+  sheetsId: localStorage.getItem('ep-sheets-id') || '',
+  sheetsConnected: false,
+  projects: JSON.parse(localStorage.getItem('ep-projects') || '[]'),
+  pendentes: JSON.parse(localStorage.getItem('ep-pendentes') || '[]'),
+  timeline: JSON.parse(localStorage.getItem('ep-timeline') || '[]'),
+  modalAction: null,
+};
+
+// Demo data if empty
+if (state.projects.length === 0) {
+  state.projects = [
+    { id: 1, name: 'DHL Supply Chain', client: 'DHL', venue: 'Tivoli Marina Vilamoura', date: '2026-04-11', status: 'active', color: '#F2C200', team: 'Bruno Domingos — GP — 961 026 466\nFilipa Limão — TSST — 961 026 280\nDP Riggers — Rigging externo', protocols: 'Em caso de incêndio: avisar GP via rádio, acionar protocolo hotel, usar extintor mais próximo.\nEm caso de acidente: não mover vítima, contactar Filipa Limão (961 026 280) ou 112.\nEPI obrigatórios: capacete, luvas, colete visibilidade, calçado S3.' },
+    { id: 2, name: 'Gala Anual Millennium BCP', client: 'Millennium BCP', venue: 'Pavilhão Carlos Lopes, Lisboa', date: '2026-05-22', status: 'prep', color: '#1A5CA8', team: '', protocols: '' },
+    { id: 3, name: 'Conferência Deloitte', client: 'Deloitte Portugal', venue: 'Centro de Congressos Lisboa', date: '2026-03-01', status: 'done', color: '#1E7A4A', team: '', protocols: '' },
+  ];
+  saveProjects();
+}
+
+if (state.pendentes.length === 0) {
+  state.pendentes = [
+    { id: 1, projectId: 1, title: 'Confirmar rider técnico de som com cliente', detail: 'Cliente DHL ainda não enviou especificações do sistema de som preferido', responsible: 'Bruno D.', deadline: '2026-04-05', priority: 'high', done: false },
+    { id: 2, projectId: 1, title: 'Alojamento equipa — 3 quartos por confirmar', detail: 'Hotel Tivoli confirmou 5/8 quartos. Faltam 3 para técnicos de estruturas', responsible: 'Bruno D.', deadline: '2026-04-07', priority: 'high', done: false },
+    { id: 3, projectId: 1, title: 'Layouts de palco aprovados pelo cliente', detail: 'Versão 3 do layout enviada a 25/03. Aguardar aprovação formal por email', responsible: 'Bruno D.', deadline: '2026-04-06', priority: 'high', done: false },
+    { id: 4, projectId: 1, title: 'Confirmação de acesso para manitou', detail: 'Hotel precisa de autorização municipal para entrada de manitou pela varanda', responsible: 'Filipa L.', deadline: '2026-04-08', priority: 'med', done: false },
+    { id: 5, projectId: 1, title: 'Seguro de responsabilidade civil evento', detail: 'Apólice para DHL event submetida, aguardar confirmação seguradora', responsible: 'Adm.', deadline: '2026-04-09', priority: 'med', done: false },
+    { id: 6, projectId: 1, title: 'Plano de refeições equipa montagem', detail: 'Coordenar com hotel horários e local de refeições equipa 10 Abril', responsible: 'Bruno D.', deadline: '2026-04-08', priority: 'low', done: false },
+    { id: 7, projectId: 2, title: 'Proposta de cenografia enviada', detail: 'Aguardar aprovação do departamento de marketing Millennium', responsible: 'Comercial', deadline: '2026-04-15', priority: 'med', done: false },
+  ];
+  savePendentes();
+}
+
+if (state.timeline.length === 0) {
+  state.timeline = [
+    { id: 1, projectId: 1, time: '07:00', desc: 'Chegada de equipa e briefing de segurança', dept: 'Todos' },
+    { id: 2, projectId: 1, time: '08:00', desc: 'Descarga de camiões (EPI obrigatórios)', dept: 'Estruturas' },
+    { id: 3, projectId: 1, time: '09:00', desc: 'Pré rigg e rigg — DP Riggers', dept: 'Rigging' },
+    { id: 4, projectId: 1, time: '13:00', desc: 'Montagem de ledwall e jumbotrone', dept: 'Vídeo' },
+    { id: 5, projectId: 1, time: '15:00', desc: 'Cablagem geral AV', dept: 'Som/Luz/Vídeo' },
+    { id: 6, projectId: 1, time: '17:00', desc: 'Tech rehearsal / soundcheck', dept: 'Todos' },
+    { id: 7, projectId: 1, time: '19:00', desc: 'Abertura de portas ao público', dept: 'GP' },
+    { id: 8, projectId: 1, time: '20:00', desc: 'Início do programa', dept: 'GP' },
+    { id: 9, projectId: 1, time: '23:00', desc: 'Fim do evento', dept: 'GP' },
+    { id: 10, projectId: 1, time: '23:30', desc: 'Início de desmontagem', dept: 'Todos' },
+  ];
+  saveTimeline();
+}
+
+// ── PERSISTENCE ───────────────────────────────────────────────────────────────
+function saveProjects() { localStorage.setItem('ep-projects', JSON.stringify(state.projects)); }
+function savePendentes() { localStorage.setItem('ep-pendentes', JSON.stringify(state.pendentes)); }
+function saveTimeline() { localStorage.setItem('ep-timeline', JSON.stringify(state.timeline)); }
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function showView(view, projectId = null) {
+  state.currentView = view;
+  if (projectId) state.currentProject = projectId;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + view);
+  if (navEl) navEl.classList.add('active');
+  const titles = { dashboard:'Dashboard', projects:'Projetos', pendentes:'Pendentes', timeline:'Timeline', docs:'Documentos', config:'Google Sheets' };
+  document.getElementById('topbar-title').textContent = titles[view] || view;
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+  if (view === 'dashboard') renderDashboard();
+  else if (view === 'projects') renderProjects();
+  else if (view === 'pendentes') renderPendentes(projectId);
+  else if (view === 'timeline') renderTimeline(projectId);
+  else if (view === 'docs') renderDocs(projectId);
+  else if (view === 'config') renderConfig();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const c = document.getElementById('content');
+  const activeProject = state.projects.find(p => p.status === 'active');
+  const totalPending = state.pendentes.filter(p => !p.done).length;
+  const highPending = state.pendentes.filter(p => !p.done && p.priority === 'high').length;
+  const overdue = state.pendentes.filter(p => !p.done && new Date(p.deadline) < new Date()).length;
+
+  c.innerHTML = `
+    ${activeProject ? `
+    <div class="launch-card">
+      <div class="launch-icon">◈</div>
+      <div class="launch-info">
+        <div class="launch-title">${activeProject.name}</div>
+        <div class="launch-sub">${activeProject.venue} · ${formatDate(activeProject.date)} · ${state.pendentes.filter(p=>p.projectId===activeProject.id&&!p.done).length} pendentes em aberto</div>
+      </div>
+      <button class="launch-btn" onclick="launchCopilot()">▶ Lançar Co-piloto</button>
+    </div>` : ''}
+
+    <div class="section-title">Visão geral</div>
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="stat-label">Projetos ativos</div>
+        <div class="stat-value">${state.projects.filter(p=>p.status==='active').length}</div>
+        <div class="stat-sub">${state.projects.length} no total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pendentes em aberto</div>
+        <div class="stat-value ${highPending > 0 ? 'red' : 'yellow'}">${totalPending}</div>
+        <div class="stat-sub">${highPending} de alta prioridade</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Em atraso</div>
+        <div class="stat-value ${overdue > 0 ? 'red' : 'green'}">${overdue}</div>
+        <div class="stat-sub">${overdue > 0 ? 'requerem atenção imediata' : 'tudo dentro do prazo'}</div>
+      </div>
+    </div>
+
+    <div class="section-title">Próximos eventos</div>
+    <div class="project-list">
+      ${state.projects.filter(p=>p.status!=='done').sort((a,b)=>new Date(a.date)-new Date(b.date)).map(p => projectCard(p)).join('')}
+    </div>
+
+    ${totalPending > 0 ? `
+    <div style="margin-top:20px">
+      <div class="section-title">Pendentes urgentes</div>
+      <div class="pending-list">
+        ${state.pendentes.filter(p=>!p.done && p.priority==='high').slice(0,4).map(p => pendingItem(p)).join('')}
+      </div>
+      ${totalPending > 4 ? `<div style="text-align:center;margin-top:10px"><span onclick="showView('pendentes')" style="font-family:var(--mono);font-size:11px;color:var(--yd);cursor:pointer">Ver todos os pendentes →</span></div>` : ''}
+    </div>` : ''}
+  `;
+}
+
+function projectCard(p) {
+  const pends = state.pendentes.filter(x=>x.projectId===p.id&&!x.done).length;
+  const highP = state.pendentes.filter(x=>x.projectId===p.id&&!x.done&&x.priority==='high').length;
+  const statusLabels = { prep:'em preparação', active:'em curso', done:'concluído' };
+  const statusClass = { prep:'prep', active:'active', done:'done' };
+  return `<div class="project-item ${p.status==='active'?'active-event':''}" onclick="showView('pendentes',${p.id})">
+    <div class="project-color" style="background:${p.color}"></div>
+    <div class="project-info">
+      <div class="project-name">${p.name}</div>
+      <div class="project-meta">${p.client} · ${p.venue} · ${formatDate(p.date)}</div>
+    </div>
+    <div class="project-right">
+      <span class="badge ${statusClass[p.status]}">${statusLabels[p.status]}</span>
+      <span class="pending-count">${pends > 0 ? `<span>${pends} pendentes${highP>0?' ('+highP+' urgentes)':''}</span>` : '✓ tudo ok'}</span>
+    </div>
+  </div>`;
+}
+
+// ── PROJECTS ──────────────────────────────────────────────────────────────────
+function renderProjects() {
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="section-title">Todos os projetos</div>
+    <div class="project-list" style="margin-bottom:20px">
+      ${state.projects.map(p => projectCard(p)).join('')}
+    </div>
+  `;
+}
+
+// ── PENDENTES ─────────────────────────────────────────────────────────────────
+function renderPendentes(projectId) {
+  const c = document.getElementById('content');
+  const proj = projectId ? state.projects.find(p=>p.id===projectId) : null;
+  const pends = projectId
+    ? state.pendentes.filter(p=>p.projectId===projectId)
+    : state.pendentes;
+  const open = pends.filter(p=>!p.done);
+  const done = pends.filter(p=>p.done);
+
+  c.innerHTML = `
+    ${proj ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="width:4px;height:24px;border-radius:2px;background:${proj.color}"></div>
+      <div>
+        <div style="font-family:var(--sans);font-size:15px;font-weight:700">${proj.name}</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">${proj.venue} · ${formatDate(proj.date)}</div>
+      </div>
+      <button onclick="launchCopilot(${proj.id})" style="margin-left:auto;padding:7px 14px;background:var(--y);border:none;border-radius:7px;font-family:var(--sans);font-size:12px;font-weight:700;color:#111;cursor:pointer">▶ Co-piloto</button>
+    </div>` : ''}
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="section-title" style="margin-bottom:0">Pendentes em aberto (${open.length})</div>
+      <button class="btn-sm" onclick="showNewPendingModal(${projectId||1})" style="font-size:11px;padding:5px 12px">+ Adicionar</button>
+    </div>
+    <div class="pending-list" style="margin-bottom:20px">
+      ${open.length > 0 ? open.map(p => pendingItem(p)).join('') : '<div class="empty">Sem pendentes em aberto.<br>Tudo em ordem! ✓</div>'}
+    </div>
+    ${done.length > 0 ? `
+    <div class="section-title">Resolvidos (${done.length})</div>
+    <div class="pending-list">
+      ${done.map(p => pendingItem(p)).join('')}
+    </div>` : ''}
+  `;
+}
+
+function pendingItem(p) {
+  const proj = state.projects.find(x=>x.id===p.projectId);
+  const isOverdue = !p.done && new Date(p.deadline) < new Date();
+  return `<div class="pending-item ${p.done?'resolved':''}">
+    <div class="check-box ${p.done?'checked':''}" onclick="togglePending(${p.id})"></div>
+    <div class="pending-body">
+      <div class="pending-title">${p.title}</div>
+      <div class="pending-detail">${p.detail}${proj&&!state.currentProject?`<br><span style="color:var(--yd)">${proj.name}</span>`:''}
+      </div>
+    </div>
+    <div class="pending-right">
+      <span class="priority ${p.priority}">${p.priority==='high'?'urgente':p.priority==='med'?'médio':'baixo'}</span>
+      <span class="assigned">${p.responsible}</span>
+      <span class="deadline ${isOverdue?'overdue':''}">${isOverdue?'⚠ ':''} ${formatDate(p.deadline)}</span>
+    </div>
+  </div>`;
+}
+
+function togglePending(id) {
+  const p = state.pendentes.find(x=>x.id===id);
+  if (p) { p.done = !p.done; savePendentes(); showView(state.currentView, state.currentProject); notify(p.done ? '✓ Pendente resolvido' : 'Pendente reaberto'); }
+}
+
+// ── TIMELINE ──────────────────────────────────────────────────────────────────
+function renderTimeline(projectId) {
+  const c = document.getElementById('content');
+  const pid = projectId || (state.projects.find(p=>p.status==='active')?.id) || state.projects[0]?.id;
+  const proj = state.projects.find(p=>p.id===pid);
+  const tl = state.timeline.filter(t=>t.projectId===pid);
+
+  c.innerHTML = `
+    ${proj ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="width:4px;height:24px;border-radius:2px;background:${proj.color}"></div>
+      <div style="font-family:var(--sans);font-size:15px;font-weight:700">${proj.name}</div>
+      <div class="field" style="margin:0 0 0 auto;display:flex;gap:6px;align-items:center">
+        <label style="font-family:var(--mono);font-size:10px;color:var(--dim);white-space:nowrap">Projeto:</label>
+        <select onchange="renderTimeline(parseInt(this.value));state.currentProject=parseInt(this.value)" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--text)">
+          ${state.projects.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${p.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>` : ''}
+
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div class="section-title" style="margin-bottom:0;flex:1">Timeline do evento</div>
+      <button class="btn-sm" onclick="saveTLAndNotify()" style="font-size:11px;padding:5px 12px">Guardar</button>
+    </div>
+
+    <div class="card">
+      <div class="timeline-editor" id="tl-editor">
+        ${tl.map(t => tlRow(t)).join('')}
+      </div>
+      <button class="tl-add" style="margin-top:8px" onclick="addTLRow(${pid})">+ Adicionar momento</button>
+    </div>
+
+    <div style="margin-top:14px;padding:12px 14px;background:var(--yl);border:1px solid var(--ym);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--yd);line-height:1.6">
+      ◈ Esta timeline é transferida automaticamente para o Co-piloto quando lançado para este projeto.
+    </div>
+  `;
+}
+
+function tlRow(t) {
+  const depts = ['Todos','GP','Estruturas','Rigging','Vídeo','Iluminação','Som','Som/Luz/Vídeo','Segurança'];
+  return `<div class="tl-row" id="tl-${t.id}">
+    <input class="tl-input-time" type="time" value="${t.time}" onchange="updateTL(${t.id},'time',this.value)">
+    <input class="tl-input-desc" type="text" value="${t.desc}" placeholder="Descrição" onchange="updateTL(${t.id},'desc',this.value)">
+    <select class="tl-dept" onchange="updateTL(${t.id},'dept',this.value)">
+      ${depts.map(d=>`<option ${d===t.dept?'selected':''}>${d}</option>`).join('')}
+    </select>
+    <button class="tl-remove" onclick="removeTL(${t.id})">×</button>
+  </div>`;
+}
+
+function addTLRow(pid) {
+  const newItem = { id: Date.now(), projectId: pid, time: '00:00', desc: '', dept: 'Todos' };
+  state.timeline.push(newItem);
+  const editor = document.getElementById('tl-editor');
+  const div = document.createElement('div');
+  div.innerHTML = tlRow(newItem);
+  editor.appendChild(div.firstChild);
+}
+
+function updateTL(id, field, value) {
+  const t = state.timeline.find(x=>x.id===id);
+  if (t) t[field] = value;
+}
+
+function removeTL(id) {
+  state.timeline = state.timeline.filter(x=>x.id!==id);
+  document.getElementById('tl-'+id)?.remove();
+}
+
+function saveTLAndNotify() { saveTimeline(); notify('Timeline guardada'); }
+
+// ── DOCS ──────────────────────────────────────────────────────────────────────
+function renderDocs(projectId) {
+  const c = document.getElementById('content');
+  const proj = projectId ? state.projects.find(p=>p.id===projectId) : state.projects.find(p=>p.status==='active');
+  c.innerHTML = `
+    ${proj ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="width:4px;height:24px;border-radius:2px;background:${proj.color}"></div>
+      <div style="font-family:var(--sans);font-size:15px;font-weight:700">${proj.name}</div>
+    </div>` : ''}
+    <div class="section-title">Documentos do projeto</div>
+    <div class="doc-list">
+      <div class="doc-item">
+        <div class="doc-icon">📋</div>
+        <div class="doc-info">
+          <div class="doc-name">Ficha Operacional de Evento</div>
+          <div class="doc-meta">DOCX · Gerado automaticamente com dados do projeto</div>
+        </div>
+        <div class="doc-actions">
+          <button class="doc-btn primary" onclick="notify('A gerar ficha operacional...')">Gerar DOCX</button>
+        </div>
+      </div>
+      <div class="doc-item">
+        <div class="doc-icon">🛡</div>
+        <div class="doc-info">
+          <div class="doc-name">Plano de Segurança (PSSE)</div>
+          <div class="doc-meta">PDF · Elaborado por Filipa Limão — TSST</div>
+        </div>
+        <div class="doc-actions">
+          <button class="doc-btn" onclick="notify('Funcionalidade em desenvolvimento')">Ver</button>
+          <button class="doc-btn primary" onclick="notify('A gerar PSSE...')">Gerar PDF</button>
+        </div>
+      </div>
+      <div class="doc-item">
+        <div class="doc-icon">🎵</div>
+        <div class="doc-info">
+          <div class="doc-name">Rider Técnico</div>
+          <div class="doc-meta">PDF · Aguardar envio do cliente</div>
+        </div>
+        <div class="doc-actions">
+          <button class="doc-btn" onclick="notify('Upload em desenvolvimento')">Upload</button>
+        </div>
+      </div>
+      <div class="doc-item">
+        <div class="doc-icon">🏨</div>
+        <div class="doc-info">
+          <div class="doc-name">Informações do Venue</div>
+          <div class="doc-meta">DOCX · Tivoli Marina Vilamoura · Atualizado 27 Mar</div>
+        </div>
+        <div class="doc-actions">
+          <button class="doc-btn" onclick="notify('Funcionalidade em desenvolvimento')">Ver</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding:12px 14px;background:var(--yl);border:1px solid var(--ym);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--yd);line-height:1.6">
+      ◈ Os documentos gerados são guardados no Google Drive da Europalco e associados a este projeto.
+    </div>
+  `;
+}
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+function renderConfig() {
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <div class="section-title">Ligação ao Google Sheets</div>
+    <div class="sheets-config">
+      <div class="sheets-config-title">Google Sheets ID</div>
+      <div class="field" style="margin-bottom:10px">
+        <label>ID da folha de cálculo (da URL do Google Sheets)</label>
+        <input type="text" id="sheets-id-input" value="${state.sheetsId}" placeholder="ex: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Google Apps Script Web App URL (para leitura/escrita)</label>
+        <input type="text" id="sheets-url-input" value="${localStorage.getItem('ep-sheets-url')||''}" placeholder="https://script.google.com/macros/s/...">
+      </div>
+      <button class="btn-sm" onclick="saveSheetsCfg()">Guardar e testar ligação</button>
+    </div>
+
+    <div class="section-title" style="margin-top:20px">Como configurar</div>
+    <div class="card" style="font-family:var(--mono);font-size:11px;color:var(--mid);line-height:1.8">
+      <strong style="color:var(--text)">1.</strong> Cria uma Google Sheet com as abas: <em>Projetos, Pendentes, Timeline</em><br>
+      <strong style="color:var(--text)">2.</strong> Em Extensões → Apps Script, cria um Web App que lê e escreve os dados<br>
+      <strong style="color:var(--text)">3.</strong> Publica o Web App como "Acessível a qualquer pessoa"<br>
+      <strong style="color:var(--text)">4.</strong> Cola o URL do Web App e o ID da Sheet acima<br>
+      <strong style="color:var(--text)">5.</strong> Clica "Guardar e testar ligação"<br><br>
+      <span style="color:var(--yd)">◈ Enquanto não há ligação ao Sheets, os dados são guardados localmente no browser.</span>
+    </div>
+
+    <div style="margin-top:20px">
+      <div class="section-title">Dados locais</div>
+      <div class="card" style="display:flex;gap:20px">
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">Projetos</div>
+          <div style="font-family:var(--sans);font-size:20px;font-weight:700">${state.projects.length}</div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">Pendentes</div>
+          <div style="font-family:var(--sans);font-size:20px;font-weight:700">${state.pendentes.length}</div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">Itens de timeline</div>
+          <div style="font-family:var(--sans);font-size:20px;font-weight:700">${state.timeline.length}</div>
+        </div>
+        <div style="margin-left:auto">
+          <button onclick="if(confirm('Apagar todos os dados locais?')){localStorage.clear();location.reload()}" style="padding:6px 12px;background:none;border:1px solid rgba(192,57,43,0.3);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--red);cursor:pointer">Limpar dados</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function saveSheetsCfg() {
+  const id = document.getElementById('sheets-id-input').value.trim();
+  const url = document.getElementById('sheets-url-input').value.trim();
+  state.sheetsId = id;
+  localStorage.setItem('ep-sheets-id', id);
+  localStorage.setItem('ep-sheets-url', url);
+  notify('Configuração guardada — a testar ligação...');
+  setTimeout(() => {
+    if (url) {
+      fetch(url + '?action=ping').then(() => {
+        document.getElementById('sheets-dot').className = 'sheets-dot ok';
+        document.getElementById('sheets-label').textContent = 'Sheets ligado';
+        state.sheetsConnected = true;
+        notify('Google Sheets ligado com sucesso');
+      }).catch(() => notify('Não foi possível ligar ao Sheets — verifica o URL'));
+    } else {
+      notify('URL do Web App não definido — a guardar localmente');
+    }
+  }, 800);
+}
+
+// ── COPILOT LAUNCH ────────────────────────────────────────────────────────────
+function launchCopilot(projectId) {
+  const pid = projectId || state.projects.find(p=>p.status==='active')?.id || state.projects[0]?.id;
+  const proj = state.projects.find(p=>p.id===pid);
+  if (!proj) { notify('Nenhum projeto selecionado'); return; }
+
+  const tl = state.timeline.filter(t=>t.projectId===pid)
+    .sort((a,b)=>a.time.localeCompare(b.time))
+    .map(t=>`${t.time} — ${t.desc}`)
+    .join('\n');
+
+  const openPends = state.pendentes.filter(p=>p.projectId===pid && !p.done)
+    .map(p=>`[${p.priority.toUpperCase()}] ${p.title} (resp: ${p.responsible}, prazo: ${formatDate(p.deadline)})`)
+    .join('\n');
+
+  // Build copilot URL with all context encoded
+  const ctx = {
+    name: proj.name,
+    venue: proj.venue,
+    date: formatDate(proj.date),
+    timeline: tl,
+    team: proj.team,
+    protocols: proj.protocols,
+    pendentes: openPends,
+  };
+
+  const encoded = btoa(encodeURIComponent(JSON.stringify(ctx)));
+  const copilotUrl = `https://brunodomingos-maker.github.io/copiloto-europalco/?ctx=${encoded}`;
+
+  // Show modal with launch options
+  document.getElementById('modal-title').textContent = 'Lançar Co-piloto';
+  document.getElementById('modal-sub').textContent = `${proj.name} · ${openPends ? state.pendentes.filter(p=>p.projectId===pid&&!p.done).length + ' pendentes em aberto' : 'sem pendentes'}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="background:var(--bg);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;color:var(--mid);line-height:1.7;margin-bottom:14px">
+      <strong style="color:var(--text)">O co-piloto vai receber:</strong><br>
+      ✓ Timeline com ${state.timeline.filter(t=>t.projectId===pid).length} momentos<br>
+      ✓ Equipa e contactos<br>
+      ✓ Protocolos e regras de segurança<br>
+      ${openPends ? `⚠ ${state.pendentes.filter(p=>p.projectId===pid&&!p.done).length} pendentes ainda em aberto` : '✓ Sem pendentes em aberto'}
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">O co-piloto abre numa nova janela/tab com todo o contexto pré-carregado.</div>
+  `;
+  document.getElementById('modal-confirm').textContent = '▶ Abrir Co-piloto';
+  state.modalAction = () => { window.open(copilotUrl, '_blank'); closeModal(); };
+  document.getElementById('modal').classList.add('show');
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────────────
+function showNewProjectModal() {
+  document.getElementById('modal-title').textContent = 'Novo Projeto';
+  document.getElementById('modal-sub').textContent = 'Preenche os dados do evento';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>Nome do evento</label><input type="text" id="np-name" placeholder="ex: Gala Anual XYZ"></div>
+    <div class="field"><label>Cliente</label><input type="text" id="np-client" placeholder="ex: Empresa ABC"></div>
+    <div class="field"><label>Venue / Local</label><input type="text" id="np-venue" placeholder="ex: Centro de Congressos Lisboa"></div>
+    <div class="field"><label>Data do evento</label><input type="date" id="np-date"></div>
+    <div class="field"><label>Estado</label>
+      <select id="np-status"><option value="prep">Em preparação</option><option value="active">Em curso</option></select>
+    </div>
+  `;
+  document.getElementById('modal-confirm').textContent = 'Criar Projeto';
+  state.modalAction = () => {
+    const name = document.getElementById('np-name').value.trim();
+    if (!name) { notify('Introduz o nome do evento'); return; }
+    const colors = ['#F2C200','#1A5CA8','#1E7A4A','#C0392B','#7B2D8B'];
+    state.projects.push({ id: Date.now(), name, client: document.getElementById('np-client').value, venue: document.getElementById('np-venue').value, date: document.getElementById('np-date').value, status: document.getElementById('np-status').value, color: colors[state.projects.length % colors.length], team: '', protocols: '' });
+    saveProjects(); closeModal(); showView('projects'); notify('Projeto criado');
+  };
+  document.getElementById('modal').classList.add('show');
+}
+
+function showNewPendingModal(projectId) {
+  document.getElementById('modal-title').textContent = 'Novo Pendente';
+  document.getElementById('modal-sub').textContent = state.projects.find(p=>p.id===projectId)?.name || '';
+  document.getElementById('modal-body').innerHTML = `
+    <div class="field"><label>O que falta</label><input type="text" id="pend-title" placeholder="ex: Confirmar rider técnico"></div>
+    <div class="field"><label>Detalhe / contexto</label><textarea id="pend-detail" placeholder="Mais informação sobre o que é necessário..."></textarea></div>
+    <div class="field"><label>Responsável</label><input type="text" id="pend-resp" placeholder="ex: Bruno D."></div>
+    <div class="field"><label>Prazo</label><input type="date" id="pend-deadline"></div>
+    <div class="field"><label>Prioridade</label>
+      <select id="pend-priority"><option value="high">Alta (urgente)</option><option value="med" selected>Média</option><option value="low">Baixa</option></select>
+    </div>
+  `;
+  document.getElementById('modal-confirm').textContent = 'Adicionar Pendente';
+  state.modalAction = () => {
+    const title = document.getElementById('pend-title').value.trim();
+    if (!title) { notify('Introduz a descrição do pendente'); return; }
+    state.pendentes.push({ id: Date.now(), projectId, title, detail: document.getElementById('pend-detail').value, responsible: document.getElementById('pend-resp').value || '—', deadline: document.getElementById('pend-deadline').value, priority: document.getElementById('pend-priority').value, done: false });
+    savePendentes(); closeModal(); showView('pendentes', projectId); notify('Pendente adicionado');
+  };
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal')) return;
+  document.getElementById('modal').classList.remove('show');
+  state.modalAction = null;
+}
+
+function confirmModal() { if (state.modalAction) state.modalAction(); }
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function formatDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('pt-PT', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function notify(msg) {
+  const n = document.getElementById('notif');
+  n.textContent = msg; n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+// Check if copilot received context (for when opened from copilot launch)
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('ctx')) {
+  // Context was passed back — we're in the copilot window
+  // (Handled by the copilot app itself)
+}
+
+showView('dashboard');
+</script>
+</body>
+</html>
