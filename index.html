@@ -6,29 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Co-piloto — Europalco</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#F2C200">
-
-  <!-- iOS PWA -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Co-piloto">
-  <link rel="apple-touch-icon" href="icon-180.png">
-  <link rel="apple-touch-startup-image" href="icon-512.png">
-
-  <!-- Service Worker registration -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js', { scope: '/copiloto-europalco/' })
-          .then(r => console.log('SW registered'))
-          .catch(e => console.log('SW error', e));
-      });
-    }
-  </script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -47,7 +25,7 @@
     --green: #1E7A4A;
     --red: #C0392B;
     --mono: 'DM Mono', monospace;
-    --sans: 'Syne', sans-serif;
+    --sans: 'Roboto', sans-serif;
   }
 
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow: hidden; -webkit-font-smoothing: antialiased; }
@@ -209,7 +187,7 @@
 <!-- ══ SETUP ═══════════════════════════════════════════════════════════════════ -->
 <div class="screen" id="screen-setup">
   <div class="header">
-    <div class="logo">EUROPALCO</div>
+    <img src="data:image/webp;base64,UklGRvoCAABXRUJQVlA4WAoAAAAYAAAAAwEATwAAQUxQSF4AAAABR6AQABA01z9APBEVEQEvc+a7YBVJVqP9RBoKkICOHJznDHcV0X+jbds4dBrdbkDZQrFQtj8rBLHkAOjngOoQ5ZGYH8FN3gUjGBnBos/xX5KU6W1RUuJFMoKb/GMFVlA4IPABAABwEgCdASoEAVAAPnU4mEikoyKhJtVY8JAOiWVu7mFQALQ7jPYOgK5P/Jc5P4c/133AfQDPO+YDzqv4B/gPYB6AH9V/gHWQegB/AP7B6WX7R/Eb+on7AewABIcTphsqqBu1i4Tifayj0RWk+p3MHk7ioJGAfj7UgArs+X+qhi0cn5IXXzMdCdVRtK5OtVz+Smy+jxbvzDpIkkgflgAA/vuc1T4rn//iAI/+x/5GBo/+j/yMDR8xkzywmI3uywzji4fou7Xr/ttsgaoX/622QNUL+RYuH7Cxer9vWAmjL/DA9ikC7rkydTe7+lul/VLPVM1j/afi3pozL0THQHOEueOZXQblKTc2976SwjQvCD0206Nir45CHz9E2oxxo3srCB2vM+R/gzu59w21R5pFlea+yuU5T3oqQAT/udMPLmOkf68+uT7YWrKJQ6d/HbQzxYL+lYgZzYcJYNYxIygeCrc8+MxXvPvkFAT1/o9KSXxKVusyqsvxo3srB+NeZ8j/Bndz7gI2Ca/AHuKoQQ2OydvQD6dCkua5Jt119vyK3f4y+hvE+wZVLdeZZdWsLVv2p7uplvef37kFA17Nui1CyXJVZLDlq03zMD9eTzIDJQMPYZfjT6TfBELTofGIpGcSjN08DAQDnKhBut6h3V9gAAAARVhJRn4AAABFeGlmAABJSSoACAAAAAUAEgEDAAEAAAABAAAAGgEFAAEAAABKAAAAGwEFAAEAAABSAAAAKAEDAAEAAAACAAAAaYcEAAEAAABaAAAAAAAAAEgAAAABAAAASAAAAAEAAAACAAKgBAABAAAABAEAAAOgBAABAAAAUAAAAAAAAAA=" alt="Europalco" style="height:22px;width:auto;display:block">
     <div class="event-name">Co-piloto de evento</div>
   </div>
   <div class="setup-scroll">
@@ -1090,38 +1068,6 @@ function addToLog(text) {
   div.innerHTML = `<div class="log-item-time">${timeStr}</div><div class="log-item-text">${text}</div><span class="log-item-tag">auto-registado</span>`;
   list.insertBefore(div, list.firstChild);
 }
-</script>
-
-<!-- iOS Install Banner -->
-<div id="ios-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:14px 16px 32px;background:#fff;border-top:1px solid rgba(0,0,0,0.1);box-shadow:0 -4px 20px rgba(0,0,0,0.08);">
-  <div style="display:flex;align-items:flex-start;gap:12px">
-    <img src="icon-180.png" style="width:44px;height:44px;border-radius:10px;flex-shrink:0">
-    <div style="flex:1">
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#111;margin-bottom:3px">Instalar Co-piloto</div>
-      <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(17,17,17,0.55);line-height:1.5">
-        Toca em <strong style="color:#111">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin:0 1px">
-            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-          </svg>
-          Partilhar</strong> e depois em <strong style="color:#111">Adicionar ao ecrã principal</strong>
-      </div>
-    </div>
-    <button onclick="document.getElementById('ios-banner').style.display='none';localStorage.setItem('pwa-dismissed','1')" style="background:none;border:none;font-family:'DM Mono',monospace;font-size:18px;color:rgba(17,17,17,0.35);cursor:pointer;padding:0;line-height:1;flex-shrink:0">×</button>
-  </div>
-</div>
-
-<script>
-// Show iOS install banner if not already installed and not dismissed
-(function() {
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone === true;
-  const dismissed = localStorage.getItem('pwa-dismissed');
-  if (isIOS && !isStandalone && !dismissed) {
-    setTimeout(() => {
-      document.getElementById('ios-banner').style.display = 'block';
-    }, 3000);
-  }
-})();
 </script>
 </body>
 </html>

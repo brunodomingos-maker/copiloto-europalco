@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Europalco — Plataforma de Produção</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>Europalco — Gestão de Projetos</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -12,7 +12,7 @@
   --bg: #F8F7F4; --card: #FFFFFF; --border: rgba(0,0,0,0.08); --border2: rgba(0,0,0,0.14);
   --text: #111111; --dim: rgba(17,17,17,0.42); --mid: rgba(17,17,17,0.65);
   --green: #1E7A4A; --red: #C0392B; --blue: #1A5CA8;
-  --mono: 'DM Mono', monospace; --sans: 'Syne', sans-serif;
+  --mono: 'DM Mono', monospace; --sans: 'Roboto', sans-serif;
 }
 html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
 
@@ -135,6 +135,28 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .doc-btn.primary { background: var(--y); border-color: var(--y); color: #111; font-weight: 500; }
 
 /* ── MODAL ── */
+  /* PENDING INLINE EDIT */
+  .pending-item { position: relative; }
+  .pending-item:hover [id^="pedit-"] { opacity: 1 !important; }
+  .pending-item.editing { border-color:var(--ym); background:var(--yl); }
+  .pending-item.editing [id^="pedit-"] { opacity:1 !important; background:var(--y) !important; border-color:var(--y) !important; color:#111 !important; }
+  .pending-title-input { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text); border:none; background:transparent; outline:none; width:100%; padding:0; cursor:text; }
+  .pending-title-input:hover { background:var(--bg); border-radius:3px; padding:1px 4px; margin:-1px -4px; }
+  .pending-title-input:focus { background:var(--yl); border-radius:4px; padding:2px 6px; margin:-2px -6px; }
+  .pending-detail-input { font-family:var(--mono); font-size:10px; color:var(--dim); border:none; background:transparent; outline:none; width:100%; padding:0; cursor:text; resize:none; line-height:1.5; min-height:16px; }
+  .pending-detail-input:hover { background:var(--bg); border-radius:3px; padding:1px 4px; margin:-1px -4px; }
+  .pending-detail-input:focus { background:var(--yl); border-radius:4px; padding:2px 6px; margin:-2px -6px; color:var(--text); }
+  .pending-meta-edit { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+  .pending-meta-select { font-family:var(--mono); font-size:9px; color:var(--dim); border:1px solid var(--border); background:var(--bg); border-radius:4px; padding:2px 5px; cursor:pointer; outline:none; }
+  .pending-meta-select:focus { border-color:var(--ym); }
+  .pending-date-input { font-family:var(--mono); font-size:9px; color:var(--dim); border:1px solid var(--border); background:var(--bg); border-radius:4px; padding:2px 5px; cursor:pointer; outline:none; }
+  .pending-date-input:focus { border-color:var(--ym); }
+  .pending-resp-input { font-family:var(--mono); font-size:9px; color:var(--dim); border:1px solid var(--border); background:var(--bg); border-radius:4px; padding:2px 5px; outline:none; width:90px; }
+  .pending-resp-input:focus { border-color:var(--ym); }
+  .email-btn { display:inline-flex; align-items:center; gap:5px; padding:3px 9px; background:none; border:1px solid var(--border); border-radius:5px; font-family:var(--mono); font-size:9px; color:var(--dim); cursor:pointer; transition:all 0.15s; white-space:nowrap; margin-top:3px; }
+  .email-btn:hover { border-color:rgba(26,92,168,0.4); color:var(--blue); background:rgba(26,92,168,0.06); }
+  .email-btn.sent { border-color:rgba(30,122,74,0.3); color:var(--green); background:rgba(30,122,74,0.07); }
+  .email-btn svg { width:11px; height:11px; flex-shrink:0; }
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
 .modal-overlay.show { opacity: 1; pointer-events: all; }
 .modal { background: var(--card); border-radius: 14px; padding: 24px; width: 520px; max-width: 90vw; max-height: 80vh; overflow-y: auto; transform: translateY(8px); transition: transform 0.2s; }
@@ -164,6 +186,47 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 /* ── NOTIFICATION ── */
 .notif { position: fixed; bottom: 24px; right: 24px; background: #111; color: #fff; font-family: var(--mono); font-size: 12px; padding: 12px 18px; border-radius: 8px; border-left: 3px solid var(--y); opacity: 0; transform: translateY(8px); transition: all 0.25s; z-index: 300; max-width: 300px; line-height: 1.4; }
 .notif.show { opacity: 1; transform: translateY(0); }
+
+  /* ── CLOCK PICKER ── */
+  .clock-overlay { position:fixed; inset:0; z-index:500; display:none; }
+  .clock-overlay.show { display:block; }
+  .clock-picker {
+    position:fixed; z-index:501; background:var(--card);
+    border:1px solid var(--border2); border-radius:14px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.14);
+    width:200px; padding:16px;
+    display:none; flex-direction:column; align-items:center; gap:12px;
+  }
+  .clock-picker.show { display:flex; }
+  .clock-display {
+    font-family:var(--mono); font-size:36px; font-weight:500;
+    color:var(--text); letter-spacing:0.04em; line-height:1;
+    display:flex; align-items:center; gap:6px;
+  }
+  .clock-sep { color:var(--dim); }
+  .clock-col { display:flex; flex-direction:column; align-items:center; gap:0; }
+  .clock-val {
+    font-family:var(--mono); font-size:40px; font-weight:400;
+    color:var(--text); min-width:56px; text-align:center;
+    padding:6px 0; cursor:ns-resize; user-select:none;
+    border-radius:8px; transition:background 0.1s;
+    letter-spacing:0.02em;
+  }
+  .clock-val:hover { background:var(--yl); }
+  .clock-arrow {
+    font-size:14px; color:var(--dim); cursor:pointer; padding:4px 12px;
+    border-radius:6px; transition:all 0.15s; line-height:1;
+    user-select:none;
+  }
+  .clock-arrow:hover { background:var(--y); color:#111; }
+  .clock-label { font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:0.1em; text-transform:uppercase; }
+  .clock-confirm {
+    width:100%; padding:9px; background:var(--y); border:none;
+    border-radius:8px; font-family:var(--sans); font-size:13px;
+    font-weight:700; color:#111; cursor:pointer; transition:opacity 0.15s;
+  }
+  .clock-confirm:hover { opacity:0.88; }
+  .clock-cols { display:flex; align-items:center; gap:4px; }
 </style>
 </head>
 <body>
@@ -172,8 +235,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   <!-- ── SIDEBAR ── -->
   <div class="sidebar">
     <div class="sidebar-logo">
-      <div class="sidebar-logo-text">EUROPALCO</div>
-      <div class="sidebar-logo-sub">Plataforma de Produção</div>
+      <img src="data:image/webp;base64,UklGRvoCAABXRUJQVlA4WAoAAAAYAAAAAwEATwAAQUxQSF4AAAABR6AQABA01z9APBEVEQEvc+a7YBVJVqP9RBoKkICOHJznDHcV0X+jbds4dBrdbkDZQrFQtj8rBLHkAOjngOoQ5ZGYH8FN3gUjGBnBos/xX5KU6W1RUuJFMoKb/GMFVlA4IPABAABwEgCdASoEAVAAPnU4mEikoyKhJtVY8JAOiWVu7mFQALQ7jPYOgK5P/Jc5P4c/133AfQDPO+YDzqv4B/gPYB6AH9V/gHWQegB/AP7B6WX7R/Eb+on7AewABIcTphsqqBu1i4Tifayj0RWk+p3MHk7ioJGAfj7UgArs+X+qhi0cn5IXXzMdCdVRtK5OtVz+Smy+jxbvzDpIkkgflgAA/vuc1T4rn//iAI/+x/5GBo/+j/yMDR8xkzywmI3uywzji4fou7Xr/ttsgaoX/622QNUL+RYuH7Cxer9vWAmjL/DA9ikC7rkydTe7+lul/VLPVM1j/afi3pozL0THQHOEueOZXQblKTc2976SwjQvCD0206Nir45CHz9E2oxxo3srCB2vM+R/gzu59w21R5pFlea+yuU5T3oqQAT/udMPLmOkf68+uT7YWrKJQ6d/HbQzxYL+lYgZzYcJYNYxIygeCrc8+MxXvPvkFAT1/o9KSXxKVusyqsvxo3srB+NeZ8j/Bndz7gI2Ca/AHuKoQQ2OydvQD6dCkua5Jt119vyK3f4y+hvE+wZVLdeZZdWsLVv2p7uplvef37kFA17Nui1CyXJVZLDlq03zMD9eTzIDJQMPYZfjT6TfBELTofGIpGcSjN08DAQDnKhBut6h3V9gAAAARVhJRn4AAABFeGlmAABJSSoACAAAAAUAEgEDAAEAAAABAAAAGgEFAAEAAABKAAAAGwEFAAEAAABSAAAAKAEDAAEAAAACAAAAaYcEAAEAAABaAAAAAAAAAEgAAAABAAAASAAAAAEAAAACAAKgBAABAAAABAEAAAOgBAABAAAAUAAAAAAAAAA=" alt="Europalco" style="height:32px;width:auto;display:block;margin-bottom:4px">
+      <div class="sidebar-logo-sub">Gestão de Projetos</div>
     </div>
     <div class="sidebar-nav">
       <div class="nav-section">Geral</div>
@@ -186,9 +249,9 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         Projetos
       </div>
       <div class="nav-section">Produção</div>
-      <div class="nav-item" onclick="showView('pendentes')" id="nav-pendentes">
+      <div class="nav-item" onclick="showView('tarefas')" id="nav-tarefas">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Pendentes
+        Tarefas
       </div>
       <div class="nav-item" onclick="showView('timeline')" id="nav-timeline">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -255,7 +318,7 @@ let state = {
   sheetsId: localStorage.getItem('ep-sheets-id') || '',
   sheetsConnected: false,
   projects: JSON.parse(localStorage.getItem('ep-projects') || '[]'),
-  pendentes: JSON.parse(localStorage.getItem('ep-pendentes') || '[]'),
+  tarefas: JSON.parse(localStorage.getItem('ep-tarefas') || '[]'),
   timeline: JSON.parse(localStorage.getItem('ep-timeline') || '[]'),
   modalAction: null,
 };
@@ -270,8 +333,8 @@ if (state.projects.length === 0) {
   saveProjects();
 }
 
-if (state.pendentes.length === 0) {
-  state.pendentes = [
+if (state.tarefas.length === 0) {
+  state.tarefas = [
     { id: 1, projectId: 1, title: 'Confirmar rider técnico de som com cliente', detail: 'Cliente DHL ainda não enviou especificações do sistema de som preferido', responsible: 'Bruno D.', deadline: '2026-04-05', priority: 'high', done: false },
     { id: 2, projectId: 1, title: 'Alojamento equipa — 3 quartos por confirmar', detail: 'Hotel Tivoli confirmou 5/8 quartos. Faltam 3 para técnicos de estruturas', responsible: 'Bruno D.', deadline: '2026-04-07', priority: 'high', done: false },
     { id: 3, projectId: 1, title: 'Layouts de palco aprovados pelo cliente', detail: 'Versão 3 do layout enviada a 25/03. Aguardar aprovação formal por email', responsible: 'Bruno D.', deadline: '2026-04-06', priority: 'high', done: false },
@@ -280,7 +343,7 @@ if (state.pendentes.length === 0) {
     { id: 6, projectId: 1, title: 'Plano de refeições equipa montagem', detail: 'Coordenar com hotel horários e local de refeições equipa 10 Abril', responsible: 'Bruno D.', deadline: '2026-04-08', priority: 'low', done: false },
     { id: 7, projectId: 2, title: 'Proposta de cenografia enviada', detail: 'Aguardar aprovação do departamento de marketing Millennium', responsible: 'Comercial', deadline: '2026-04-15', priority: 'med', done: false },
   ];
-  savePendentes();
+  saveTarefas();
 }
 
 if (state.timeline.length === 0) {
@@ -301,7 +364,7 @@ if (state.timeline.length === 0) {
 
 // ── PERSISTENCE ───────────────────────────────────────────────────────────────
 function saveProjects() { localStorage.setItem('ep-projects', JSON.stringify(state.projects)); }
-function savePendentes() { localStorage.setItem('ep-pendentes', JSON.stringify(state.pendentes)); }
+function saveTarefas() { localStorage.setItem('ep-tarefas', JSON.stringify(state.tarefas)); }
 function saveTimeline() { localStorage.setItem('ep-timeline', JSON.stringify(state.timeline)); }
 
 // ── NAVIGATION ────────────────────────────────────────────────────────────────
@@ -311,25 +374,32 @@ function showView(view, projectId = null) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const navEl = document.getElementById('nav-' + view);
   if (navEl) navEl.classList.add('active');
-  const titles = { dashboard:'Dashboard', projects:'Projetos', pendentes:'Pendentes', timeline:'Timeline', docs:'Documentos', config:'Google Sheets' };
+  const titles = { dashboard:'Dashboard', projects:'Projetos', tarefas:'Tarefas', timeline:'Timeline', docs:'Documentos', config:'Google Sheets' };
   document.getElementById('topbar-title').textContent = titles[view] || view;
   const content = document.getElementById('content');
   content.innerHTML = '';
   if (view === 'dashboard') renderDashboard();
   else if (view === 'projects') renderProjects();
-  else if (view === 'pendentes') renderPendentes(projectId);
+  else if (view === 'tarefas') renderTarefas(projectId);
   else if (view === 'timeline') renderTimeline(projectId);
   else if (view === 'docs') renderDocs(projectId);
   else if (view === 'config') renderConfig();
+  // Auto-resize textareas (runs after any view)
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.pending-detail-input').forEach(ta => {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 'px';
+    });
+  });
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function renderDashboard() {
   const c = document.getElementById('content');
   const activeProject = state.projects.find(p => p.status === 'active');
-  const totalPending = state.pendentes.filter(p => !p.done).length;
-  const highPending = state.pendentes.filter(p => !p.done && p.priority === 'high').length;
-  const overdue = state.pendentes.filter(p => !p.done && new Date(p.deadline) < new Date()).length;
+  const totalPending = state.tarefas.filter(p => !p.done).length;
+  const highPending = state.tarefas.filter(p => !p.done && p.priority === 'high').length;
+  const overdue = state.tarefas.filter(p => !p.done && new Date(p.deadline) < new Date()).length;
 
   c.innerHTML = `
     ${activeProject ? `
@@ -337,7 +407,7 @@ function renderDashboard() {
       <div class="launch-icon">◈</div>
       <div class="launch-info">
         <div class="launch-title">${activeProject.name}</div>
-        <div class="launch-sub">${activeProject.venue} · ${formatDate(activeProject.date)} · ${state.pendentes.filter(p=>p.projectId===activeProject.id&&!p.done).length} pendentes em aberto</div>
+        <div class="launch-sub">${activeProject.venue} · ${formatDate(activeProject.date)} · ${state.tarefas.filter(p=>p.projectId===activeProject.id&&!p.done).length} tarefas em aberto</div>
       </div>
       <button class="launch-btn" onclick="launchCopilot()">▶ Lançar Co-piloto</button>
     </div>` : ''}
@@ -350,7 +420,7 @@ function renderDashboard() {
         <div class="stat-sub">${state.projects.length} no total</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">Pendentes em aberto</div>
+        <div class="stat-label">Tarefas em aberto</div>
         <div class="stat-value ${highPending > 0 ? 'red' : 'yellow'}">${totalPending}</div>
         <div class="stat-sub">${highPending} de alta prioridade</div>
       </div>
@@ -368,21 +438,21 @@ function renderDashboard() {
 
     ${totalPending > 0 ? `
     <div style="margin-top:20px">
-      <div class="section-title">Pendentes urgentes</div>
+      <div class="section-title">Tarefas urgentes</div>
       <div class="pending-list">
-        ${state.pendentes.filter(p=>!p.done && p.priority==='high').slice(0,4).map(p => pendingItem(p)).join('')}
+        ${state.tarefas.filter(p=>!p.done && p.priority==='high').slice(0,4).map(p => pendingItem(p)).join('')}
       </div>
-      ${totalPending > 4 ? `<div style="text-align:center;margin-top:10px"><span onclick="showView('pendentes')" style="font-family:var(--mono);font-size:11px;color:var(--yd);cursor:pointer">Ver todos os pendentes →</span></div>` : ''}
+      ${totalPending > 4 ? `<div style="text-align:center;margin-top:10px"><span onclick="showView('tarefas')" style="font-family:var(--mono);font-size:11px;color:var(--yd);cursor:pointer">Ver todos os tarefas →</span></div>` : ''}
     </div>` : ''}
   `;
 }
 
 function projectCard(p) {
-  const pends = state.pendentes.filter(x=>x.projectId===p.id&&!x.done).length;
-  const highP = state.pendentes.filter(x=>x.projectId===p.id&&!x.done&&x.priority==='high').length;
+  const pends = state.tarefas.filter(x=>x.projectId===p.id&&!x.done).length;
+  const highP = state.tarefas.filter(x=>x.projectId===p.id&&!x.done&&x.priority==='high').length;
   const statusLabels = { prep:'em preparação', active:'em curso', done:'concluído' };
   const statusClass = { prep:'prep', active:'active', done:'done' };
-  return `<div class="project-item ${p.status==='active'?'active-event':''}" onclick="showView('pendentes',${p.id})">
+  return `<div class="project-item ${p.status==='active'?'active-event':''}" onclick="showView('tarefas',${p.id})">
     <div class="project-color" style="background:${p.color}"></div>
     <div class="project-info">
       <div class="project-name">${p.name}</div>
@@ -390,7 +460,7 @@ function projectCard(p) {
     </div>
     <div class="project-right">
       <span class="badge ${statusClass[p.status]}">${statusLabels[p.status]}</span>
-      <span class="pending-count">${pends > 0 ? `<span>${pends} pendentes${highP>0?' ('+highP+' urgentes)':''}</span>` : '✓ tudo ok'}</span>
+      <span class="pending-count">${pends > 0 ? `<span>${pends} tarefas${highP>0?' ('+highP+' urgentes)':''}</span>` : '✓ tudo ok'}</span>
     </div>
   </div>`;
 }
@@ -407,12 +477,12 @@ function renderProjects() {
 }
 
 // ── PENDENTES ─────────────────────────────────────────────────────────────────
-function renderPendentes(projectId) {
+function renderTarefas(projectId) {
   const c = document.getElementById('content');
   const proj = projectId ? state.projects.find(p=>p.id===projectId) : null;
   const pends = projectId
-    ? state.pendentes.filter(p=>p.projectId===projectId)
-    : state.pendentes;
+    ? state.tarefas.filter(p=>p.projectId===projectId)
+    : state.tarefas;
   const open = pends.filter(p=>!p.done);
   const done = pends.filter(p=>p.done);
 
@@ -427,11 +497,11 @@ function renderPendentes(projectId) {
     </div>` : ''}
 
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div class="section-title" style="margin-bottom:0">Pendentes em aberto (${open.length})</div>
+      <div class="section-title" style="margin-bottom:0">Tarefas em aberto (${open.length})</div>
       <button class="btn-sm" onclick="showNewPendingModal(${projectId||1})" style="font-size:11px;padding:5px 12px">+ Adicionar</button>
     </div>
     <div class="pending-list" style="margin-bottom:20px">
-      ${open.length > 0 ? open.map(p => pendingItem(p)).join('') : '<div class="empty">Sem pendentes em aberto.<br>Tudo em ordem! ✓</div>'}
+      ${open.length > 0 ? open.map(p => pendingItem(p)).join('') : '<div class="empty">Sem tarefas em aberto.<br>Tudo em ordem! ✓</div>'}
     </div>
     ${done.length > 0 ? `
     <div class="section-title">Resolvidos (${done.length})</div>
@@ -444,24 +514,53 @@ function renderPendentes(projectId) {
 function pendingItem(p) {
   const proj = state.projects.find(x=>x.id===p.projectId);
   const isOverdue = !p.done && new Date(p.deadline) < new Date();
+  const emailSent = sentEmails.has(p.id);
+  const projLabel = proj && !state.currentProject ? `<span style="color:var(--yd);font-family:var(--mono);font-size:10px">${proj.name}</span>` : '';
+  const priorityOpts = ['high','med','low'].map(v =>
+    `<option value="${v}" ${p.priority===v?'selected':''}>${v==='high'?'urgente':v==='med'?'médio':'baixo'}</option>`
+  ).join('');
+
   return `<div class="pending-item ${p.done?'resolved':''}">
     <div class="check-box ${p.done?'checked':''}" onclick="togglePending(${p.id})"></div>
-    <div class="pending-body">
-      <div class="pending-title">${p.title}</div>
-      <div class="pending-detail">${p.detail}${proj&&!state.currentProject?`<br><span style="color:var(--yd)">${proj.name}</span>`:''}
-      </div>
+    <div class="pending-body" style="flex:1;min-width:0">
+      <input class="pending-title-input" id="pti-${p.id}" value="${p.title.replace(/"/g,'&quot;')}"
+        readonly style="cursor:default;pointer-events:none"
+        onchange="updatePendingField(${p.id},'title',this.value)"
+        onblur="updatePendingField(${p.id},'title',this.value)">
+      <textarea class="pending-detail-input" id="pdi-${p.id}" rows="1"
+        readonly style="cursor:default;pointer-events:none"
+        onchange="updatePendingField(${p.id},'detail',this.value)"
+        onblur="updatePendingField(${p.id},'detail',this.value)"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+        >${p.detail||''}</textarea>
+      ${projLabel ? `<div style="margin-top:3px">${projLabel}</div>` : ''}
+      <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:3px" id="pmeta-read-${p.id}">${p.responsible}${p.deadline?' · '+formatDate(p.deadline):''}</div>
+      ${!p.done ? `<div class="pending-meta-edit" id="pmeta-${p.id}" style="display:none;pointer-events:none">
+        <select class="pending-meta-select" id="ppri-${p.id}" disabled onchange="updatePendingField(${p.id},'priority',this.value);renderView()"
+          title="Prioridade">${priorityOpts}</select>
+        <input class="pending-resp-input" id="presp-${p.id}" value="${p.responsible||''}" placeholder="responsável"
+          readonly style="pointer-events:none"
+          title="Responsável" onblur="updatePendingField(${p.id},'responsible',this.value)">
+        <input class="pending-date-input" id="pdate-${p.id}" type="date" value="${p.deadline||''}"
+          disabled title="Prazo" onchange="updatePendingField(${p.id},'deadline',this.value)">
+      </div>` : ''}
     </div>
-    <div class="pending-right">
-      <span class="priority ${p.priority}">${p.priority==='high'?'urgente':p.priority==='med'?'médio':'baixo'}</span>
-      <span class="assigned">${p.responsible}</span>
-      <span class="deadline ${isOverdue?'overdue':''}">${isOverdue?'⚠ ':''} ${formatDate(p.deadline)}</span>
+    <div class="pending-right" style="flex-shrink:0;align-items:flex-end;gap:4px">
+      <span class="priority ${p.priority}" id="ppill-${p.id}">${p.priority==='high'?'urgente':p.priority==='med'?'médio':'baixo'}</span>
+      ${!p.done ? `<button id="pedit-${p.id}" onclick="event.stopPropagation();togglePendingEdit(${p.id})" title="Editar" style="width:22px;height:22px;background:none;border:1px solid var(--border);border-radius:5px;font-size:11px;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;opacity:0;margin-left:2px" onmouseenter="this.style.opacity=1" onmouseleave="if(!this.closest('.editing'))this.style.opacity=0">✎</button>` : ''}
+      ${!p.done ? `<button class="email-btn ${emailSent?'sent':''}" onclick="event.stopPropagation();sendPendingEmail(${p.id})" title="Notificar por email">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+        ${emailSent?'enviado':'notificar'}
+      </button>` : ''}
     </div>
+    ${!p.done ? `<button class="pending-edit-btn" id="pedit-${p.id}" onclick="event.stopPropagation();togglePendingEdit(${p.id})" title="Editar">✎</button>` : ''}
   </div>`;
 }
 
+
 function togglePending(id) {
-  const p = state.pendentes.find(x=>x.id===id);
-  if (p) { p.done = !p.done; savePendentes(); showView(state.currentView, state.currentProject); notify(p.done ? '✓ Pendente resolvido' : 'Pendente reaberto'); }
+  const p = state.tarefas.find(x=>x.id===id);
+  if (p) { p.done = !p.done; saveTarefas(); showView(state.currentView, state.currentProject); notify(p.done ? '✓ Tarefa resolvida' : 'Tarefa reaberta'); }
 }
 
 // ── TIMELINE ──────────────────────────────────────────────────────────────────
@@ -496,7 +595,7 @@ function renderTimeline(projectId) {
     </div>
 
     <div style="margin-top:14px;padding:12px 14px;background:var(--yl);border:1px solid var(--ym);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--yd);line-height:1.6">
-      ◈ Esta timeline é transferida automaticamente para o Co-piloto quando lançado para este projeto.
+      ◈ Esta timeline é transferida automaticamente para o Co-piloto. Clica na hora para abrir o relógio. Ao guardar, os momentos são ordenados por data e hora.
     </div>
   `;
 }
@@ -504,7 +603,14 @@ function renderTimeline(projectId) {
 function tlRow(t) {
   const depts = ['Todos','GP','Estruturas','Rigging','Vídeo','Iluminação','Som','Som/Luz/Vídeo','Segurança'];
   return `<div class="tl-row" id="tl-${t.id}">
-    <input class="tl-input-time" type="time" value="${t.time}" onchange="updateTL(${t.id},'time',this.value)">
+    <input class="tl-input-date" type="date" value="${t.date||''}"
+      onchange="updateTL(${t.id},'date',this.value)"
+      title="Data"
+      style="width:130px;padding:7px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--text);outline:none">
+    <input class="tl-input-time" type="text" readonly value="${t.time||'--:--'}"
+      onclick="openClock(this,${t.id})"
+      title="Clica para seleccionar a hora"
+      style="width:72px;padding:7px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);outline:none;cursor:pointer;text-align:center;letter-spacing:0.05em">
     <input class="tl-input-desc" type="text" value="${t.desc}" placeholder="Descrição" onchange="updateTL(${t.id},'desc',this.value)">
     <select class="tl-dept" onchange="updateTL(${t.id},'dept',this.value)">
       ${depts.map(d=>`<option ${d===t.dept?'selected':''}>${d}</option>`).join('')}
@@ -514,7 +620,8 @@ function tlRow(t) {
 }
 
 function addTLRow(pid) {
-  const newItem = { id: Date.now(), projectId: pid, time: '00:00', desc: '', dept: 'Todos' };
+  const today = new Date().toISOString().split('T')[0];
+  const newItem = { id: Date.now(), projectId: pid, date: today, time: '00:00', desc: '', dept: 'Todos' };
   state.timeline.push(newItem);
   const editor = document.getElementById('tl-editor');
   const div = document.createElement('div');
@@ -532,66 +639,244 @@ function removeTL(id) {
   document.getElementById('tl-'+id)?.remove();
 }
 
-function saveTLAndNotify() { saveTimeline(); notify('Timeline guardada'); }
+function saveTLAndNotify() {
+  // Sort by date then time before saving
+  state.timeline.sort((a, b) => {
+    const da = (a.date||'') + (a.time||'');
+    const db = (b.date||'') + (b.time||'');
+    return da.localeCompare(db);
+  });
+  saveTimeline();
+  renderTimeline(state.currentProject);
+  notify('Timeline guardada e ordenada por data e hora');
+}
 
 // ── DOCS ──────────────────────────────────────────────────────────────────────
 function renderDocs(projectId) {
   const c = document.getElementById('content');
-  const proj = projectId ? state.projects.find(p=>p.id===projectId) : state.projects.find(p=>p.status==='active');
+  const pid = projectId || state.projects.find(p=>p.status==='active')?.id || state.projects[0]?.id;
+  const proj = state.projects.find(p=>p.id===pid);
+  const docs = getDocsForProject(pid);
+
+  const typeIcon = { pdf:'📄', docx:'📝', xlsx:'📊', jpg:'🖼', jpeg:'🖼', png:'🖼', other:'📎' };
+  const typeColor = { pdf:'#C0392B', docx:'#1A5CA8', xlsx:'#1E7A4A', jpg:'#6B35B8', jpeg:'#6B35B8', png:'#6B35B8', other:'#888' };
+
   c.innerHTML = `
-    ${proj ? `<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <div style="width:4px;height:24px;border-radius:2px;background:${proj.color}"></div>
-      <div style="font-family:var(--sans);font-size:15px;font-weight:700">${proj.name}</div>
-    </div>` : ''}
-    <div class="section-title">Documentos do projeto</div>
-    <div class="doc-list">
-      <div class="doc-item">
-        <div class="doc-icon">📋</div>
-        <div class="doc-info">
-          <div class="doc-name">Ficha Operacional de Evento</div>
-          <div class="doc-meta">DOCX · Gerado automaticamente com dados do projeto</div>
-        </div>
-        <div class="doc-actions">
-          <button class="doc-btn primary" onclick="notify('A gerar ficha operacional...')">Gerar DOCX</button>
-        </div>
-      </div>
-      <div class="doc-item">
-        <div class="doc-icon">🛡</div>
-        <div class="doc-info">
-          <div class="doc-name">Plano de Segurança (PSSE)</div>
-          <div class="doc-meta">PDF · Elaborado por Filipa Limão — TSST</div>
-        </div>
-        <div class="doc-actions">
-          <button class="doc-btn" onclick="notify('Funcionalidade em desenvolvimento')">Ver</button>
-          <button class="doc-btn primary" onclick="notify('A gerar PSSE...')">Gerar PDF</button>
-        </div>
-      </div>
-      <div class="doc-item">
-        <div class="doc-icon">🎵</div>
-        <div class="doc-info">
-          <div class="doc-name">Rider Técnico</div>
-          <div class="doc-meta">PDF · Aguardar envio do cliente</div>
-        </div>
-        <div class="doc-actions">
-          <button class="doc-btn" onclick="notify('Upload em desenvolvimento')">Upload</button>
-        </div>
-      </div>
-      <div class="doc-item">
-        <div class="doc-icon">🏨</div>
-        <div class="doc-info">
-          <div class="doc-name">Informações do Venue</div>
-          <div class="doc-meta">DOCX · Tivoli Marina Vilamoura · Atualizado 27 Mar</div>
-        </div>
-        <div class="doc-actions">
-          <button class="doc-btn" onclick="notify('Funcionalidade em desenvolvimento')">Ver</button>
-        </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      ${proj ? `<div style="display:flex;align-items:center;gap:8px;flex:1">
+        <div style="width:4px;height:24px;border-radius:2px;background:${proj.color}"></div>
+        <div style="font-family:var(--sans);font-size:15px;font-weight:700">${proj.name}</div>
+      </div>` : '<div style="flex:1"></div>'}
+      <div style="display:flex;gap:6px;align-items:center">
+        <label style="font-family:var(--mono);font-size:10px;color:var(--dim);white-space:nowrap">Projeto:</label>
+        <select onchange="state.currentProject=parseInt(this.value);showView('docs',parseInt(this.value))" style="padding:5px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:11px;color:var(--text)">
+          ${state.projects.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${p.name}</option>`).join('')}
+        </select>
       </div>
     </div>
 
-    <div style="margin-top:20px;padding:12px 14px;background:var(--yl);border:1px solid var(--ym);border-radius:8px;font-family:var(--mono);font-size:11px;color:var(--yd);line-height:1.6">
-      ◈ Os documentos gerados são guardados no Google Drive da Europalco e associados a este projeto.
+    <!-- Upload zone -->
+    <div id="upload-zone" style="border:2px dashed var(--border2);border-radius:10px;padding:28px 20px;text-align:center;margin-bottom:18px;transition:all 0.2s;cursor:pointer;background:var(--card)"
+      onclick="document.getElementById('file-input').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--y)';this.style.background='var(--yl)'"
+      ondragleave="this.style.borderColor='var(--border2)';this.style.background='var(--card)'"
+      ondrop="event.preventDefault();this.style.borderColor='var(--border2)';this.style.background='var(--card)';handleFileDrop(event,${pid})">
+      <div style="font-size:28px;margin-bottom:8px">⊕</div>
+      <div style="font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">Arrastar ficheiros ou clicar para importar</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">PDF, Word (.docx), Excel (.xlsx), Imagens (JPG, PNG)</div>
+      <input type="file" id="file-input" style="display:none" multiple accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png"
+        onchange="handleFileInput(event,${pid})">
     </div>
+
+    <!-- Document categories -->
+    <div class="section-title">Documentos do projeto (${docs.length})</div>
+
+    ${docs.length === 0 ? `<div class="empty">Sem documentos ainda.<br>Arrasta ficheiros para a zona acima.</div>` : ''}
+
+    <!-- Group by category -->
+    ${renderDocGroups(docs, typeIcon, typeColor)}
   `;
+}
+
+function renderDocGroups(docs, typeIcon, typeColor) {
+  if (docs.length === 0) return '';
+  // Sort by upload date desc
+  const sorted = [...docs].sort((a,b) => b.uploadedAt - a.uploadedAt);
+  return `<div class="doc-list">${sorted.map(doc => {
+    const ext = doc.name.split('.').pop().toLowerCase();
+    const icon = typeIcon[ext] || typeIcon.other;
+    const color = typeColor[ext] || typeColor.other;
+    const size = doc.size > 1024*1024 ? (doc.size/1024/1024).toFixed(1)+'MB' : Math.round(doc.size/1024)+'KB';
+    const date = new Date(doc.uploadedAt).toLocaleDateString('pt-PT',{day:'2-digit',month:'short',year:'numeric'});
+    return `<div class="doc-item" id="doc-${doc.id}">
+      <div class="doc-icon" style="background:${color}18;border:1px solid ${color}33;font-size:18px">${icon}</div>
+      <div class="doc-info">
+        <div class="doc-name">${doc.name}</div>
+        <div class="doc-meta">${ext.toUpperCase()} · ${size} · ${date}${doc.note?` · <em>${doc.note}</em>`:''}</div>
+      </div>
+      <div class="doc-actions">
+        ${ext==='pdf' ? `<button class="doc-btn" onclick="viewPDF('${doc.id}')">Ver</button>` : ''}
+        <button class="doc-btn" onclick="downloadDoc('${doc.id}')">↓</button>
+        <button class="doc-btn" onclick="shareDoc('${doc.id}')" title="Copiar link">⎘</button>
+        <button class="doc-btn" onclick="deleteDoc('${doc.id}',${doc.projectId})" style="color:var(--red)">×</button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ── DOCUMENT STORAGE (IndexedDB) ──────────────────────────────────────────────
+let docDB = null;
+
+function openDocDB() {
+  return new Promise((resolve, reject) => {
+    if (docDB) { resolve(docDB); return; }
+    const req = indexedDB.open('ep-docs', 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('docs')) {
+        db.createObjectStore('docs', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = e => { docDB = e.target.result; resolve(docDB); };
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveDocToDB(doc) {
+  const db = await openDocDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('docs', 'readwrite');
+    tx.objectStore('docs').put(doc);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function getDocFromDB(id) {
+  const db = await openDocDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('docs', 'readonly');
+    const req = tx.objectStore('docs').get(id);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deleteDocFromDB(id) {
+  const db = await openDocDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('docs', 'readwrite');
+    tx.objectStore('docs').delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// Doc metadata stored in localStorage (without file data)
+function getDocMeta() {
+  return JSON.parse(localStorage.getItem('ep-doc-meta') || '[]');
+}
+function saveDocMeta(meta) {
+  localStorage.setItem('ep-doc-meta', JSON.stringify(meta));
+}
+function getDocsForProject(pid) {
+  return getDocMeta().filter(d => d.projectId === pid);
+}
+
+async function handleFileInput(event, projectId) {
+  const files = Array.from(event.target.files);
+  await processFiles(files, projectId);
+  event.target.value = '';
+}
+
+async function handleFileDrop(event, projectId) {
+  const files = Array.from(event.dataTransfer.files);
+  await processFiles(files, projectId);
+}
+
+async function processFiles(files, projectId) {
+  if (files.length === 0) return;
+  notify(`A importar ${files.length} ficheiro${files.length>1?'s':''}...`);
+
+  for (const file of files) {
+    const allowed = ['pdf','docx','xlsx','jpg','jpeg','png'];
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!allowed.includes(ext)) { notify(`Tipo não suportado: ${ext}`); continue; }
+
+    const id = 'doc-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    const reader = new FileReader();
+
+    await new Promise(resolve => {
+      reader.onload = async (e) => {
+        const doc = {
+          id, projectId, name: file.name, size: file.size,
+          type: file.type, ext, uploadedAt: Date.now(),
+          data: e.target.result, note: ''
+        };
+        await saveDocToDB(doc);
+        // Save metadata (without data)
+        const meta = getDocMeta();
+        meta.push({ id, projectId, name: file.name, size: file.size, type: file.type, ext, uploadedAt: Date.now(), note: '' });
+        saveDocMeta(meta);
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  notify(`✓ ${files.length} ficheiro${files.length>1?'s importados':'importado'}`);
+  showView('docs', projectId);
+}
+
+async function viewPDF(id) {
+  const doc = await getDocFromDB(id);
+  if (!doc) { notify('Ficheiro não encontrado'); return; }
+
+  // Open PDF viewer modal
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:600;display:flex;flex-direction:column';
+  overlay.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#111;flex-shrink:0">
+      <div style="font-family:var(--mono);font-size:12px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${doc.name}</div>
+      <div style="display:flex;gap:8px;flex-shrink:0;margin-left:12px">
+        <button onclick="downloadDoc('${id}')" style="padding:6px 14px;background:var(--y);border:none;border-radius:6px;font-family:var(--sans);font-size:12px;font-weight:700;color:#111;cursor:pointer">↓ Descarregar</button>
+        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:6px 14px;background:none;border:1px solid rgba(255,255,255,0.2);border-radius:6px;font-family:var(--mono);font-size:12px;color:#fff;cursor:pointer">× Fechar</button>
+      </div>
+    </div>
+    <iframe src="${doc.data}" style="flex:1;border:none;background:#fff"></iframe>
+  `;
+  document.body.appendChild(overlay);
+}
+
+async function downloadDoc(id) {
+  const doc = await getDocFromDB(id);
+  if (!doc) { notify('Ficheiro não encontrado'); return; }
+  const a = document.createElement('a');
+  a.href = doc.data;
+  a.download = doc.name;
+  a.click();
+}
+
+async function shareDoc(id) {
+  const meta = getDocMeta().find(d => d.id === id);
+  if (!meta) return;
+  // Copy filename to clipboard as share info
+  const text = `Documento: ${meta.name} — partilhado via Europalco Gestão de Projetos`;
+  try {
+    await navigator.clipboard.writeText(text);
+    notify('✓ Info copiada para a área de transferência');
+  } catch(e) {
+    notify('Nome do ficheiro: ' + meta.name);
+  }
+}
+
+async function deleteDoc(id, projectId) {
+  if (!confirm('Eliminar este documento?')) return;
+  await deleteDocFromDB(id);
+  const meta = getDocMeta().filter(d => d.id !== id);
+  saveDocMeta(meta);
+  notify('Documento eliminado');
+  showView('docs', projectId);
 }
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
@@ -614,7 +899,7 @@ function renderConfig() {
 
     <div class="section-title" style="margin-top:20px">Como configurar</div>
     <div class="card" style="font-family:var(--mono);font-size:11px;color:var(--mid);line-height:1.8">
-      <strong style="color:var(--text)">1.</strong> Cria uma Google Sheet com as abas: <em>Projetos, Pendentes, Timeline</em><br>
+      <strong style="color:var(--text)">1.</strong> Cria uma Google Sheet com as abas: <em>Projetos, Tarefas, Timeline</em><br>
       <strong style="color:var(--text)">2.</strong> Em Extensões → Apps Script, cria um Web App que lê e escreve os dados<br>
       <strong style="color:var(--text)">3.</strong> Publica o Web App como "Acessível a qualquer pessoa"<br>
       <strong style="color:var(--text)">4.</strong> Cola o URL do Web App e o ID da Sheet acima<br>
@@ -630,8 +915,8 @@ function renderConfig() {
           <div style="font-family:var(--sans);font-size:20px;font-weight:700">${state.projects.length}</div>
         </div>
         <div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">Pendentes</div>
-          <div style="font-family:var(--sans);font-size:20px;font-weight:700">${state.pendentes.length}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">Tarefas</div>
+          <div style="font-family:var(--sans);font-size:20px;font-weight:700">${state.tarefas.length}</div>
         </div>
         <div>
           <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">Itens de timeline</div>
@@ -677,7 +962,7 @@ function launchCopilot(projectId) {
     .map(t=>`${t.time} — ${t.desc}`)
     .join('\n');
 
-  const openPends = state.pendentes.filter(p=>p.projectId===pid && !p.done)
+  const openPends = state.tarefas.filter(p=>p.projectId===pid && !p.done)
     .map(p=>`[${p.priority.toUpperCase()}] ${p.title} (resp: ${p.responsible}, prazo: ${formatDate(p.deadline)})`)
     .join('\n');
 
@@ -689,7 +974,7 @@ function launchCopilot(projectId) {
     timeline: tl,
     team: proj.team,
     protocols: proj.protocols,
-    pendentes: openPends,
+    tarefas: openPends,
   };
 
   const encoded = btoa(encodeURIComponent(JSON.stringify(ctx)));
@@ -697,14 +982,14 @@ function launchCopilot(projectId) {
 
   // Show modal with launch options
   document.getElementById('modal-title').textContent = 'Lançar Co-piloto';
-  document.getElementById('modal-sub').textContent = `${proj.name} · ${openPends ? state.pendentes.filter(p=>p.projectId===pid&&!p.done).length + ' pendentes em aberto' : 'sem pendentes'}`;
+  document.getElementById('modal-sub').textContent = `${proj.name} · ${openPends ? state.tarefas.filter(p=>p.projectId===pid&&!p.done).length + ' tarefas em aberto' : 'sem tarefas'}`;
   document.getElementById('modal-body').innerHTML = `
     <div style="background:var(--bg);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11px;color:var(--mid);line-height:1.7;margin-bottom:14px">
       <strong style="color:var(--text)">O co-piloto vai receber:</strong><br>
       ✓ Timeline com ${state.timeline.filter(t=>t.projectId===pid).length} momentos<br>
       ✓ Equipa e contactos<br>
       ✓ Protocolos e regras de segurança<br>
-      ${openPends ? `⚠ ${state.pendentes.filter(p=>p.projectId===pid&&!p.done).length} pendentes ainda em aberto` : '✓ Sem pendentes em aberto'}
+      ${openPends ? `⚠ ${state.tarefas.filter(p=>p.projectId===pid&&!p.done).length} tarefas ainda em aberto` : '✓ Sem tarefas em aberto'}
     </div>
     <div style="font-family:var(--mono);font-size:10px;color:var(--dim)">O co-piloto abre numa nova janela/tab com todo o contexto pré-carregado.</div>
   `;
@@ -738,7 +1023,7 @@ function showNewProjectModal() {
 }
 
 function showNewPendingModal(projectId) {
-  document.getElementById('modal-title').textContent = 'Novo Pendente';
+  document.getElementById('modal-title').textContent = 'Nova Tarefa';
   document.getElementById('modal-sub').textContent = state.projects.find(p=>p.id===projectId)?.name || '';
   document.getElementById('modal-body').innerHTML = `
     <div class="field"><label>O que falta</label><input type="text" id="pend-title" placeholder="ex: Confirmar rider técnico"></div>
@@ -749,12 +1034,14 @@ function showNewPendingModal(projectId) {
       <select id="pend-priority"><option value="high">Alta (urgente)</option><option value="med" selected>Média</option><option value="low">Baixa</option></select>
     </div>
   `;
-  document.getElementById('modal-confirm').textContent = 'Adicionar Pendente';
+  document.getElementById('modal-confirm').textContent = 'Adicionar Tarefa';
   state.modalAction = () => {
     const title = document.getElementById('pend-title').value.trim();
-    if (!title) { notify('Introduz a descrição do pendente'); return; }
-    state.pendentes.push({ id: Date.now(), projectId, title, detail: document.getElementById('pend-detail').value, responsible: document.getElementById('pend-resp').value || '—', deadline: document.getElementById('pend-deadline').value, priority: document.getElementById('pend-priority').value, done: false });
-    savePendentes(); closeModal(); showView('pendentes', projectId); notify('Pendente adicionado');
+    if (!title) { notify('Introduz a descrição do tarefa'); return; }
+    const newPending = { id: Date.now(), projectId, title, detail: document.getElementById('pend-detail').value, responsible: document.getElementById('pend-resp').value || '—', deadline: document.getElementById('pend-deadline').value, priority: document.getElementById('pend-priority').value, done: false };
+    state.tarefas.push(newPending);
+    saveTarefas(); closeModal(); showView('tarefas', projectId); notify('Tarefa adicionada');
+    checkAutoEmail(newPending.id);
   };
   document.getElementById('modal').classList.add('show');
 }
@@ -780,6 +1067,233 @@ function notify(msg) {
   setTimeout(() => n.classList.remove('show'), 2800);
 }
 
+// ── PENDING INLINE EDIT ──────────────────────────────────────────────────────
+let editingPendingId = null;
+
+function togglePendingEdit(id) {
+  // If another item is being edited, save and close it first
+  if (editingPendingId && editingPendingId !== id) savePendingEdit(editingPendingId);
+
+  const card = document.getElementById('pi-' + id) || document.querySelector(`[data-pid="${id}"]`);
+  const isEditing = editingPendingId === id;
+
+  if (isEditing) {
+    savePendingEdit(id);
+  } else {
+    editingPendingId = id;
+    enablePendingEdit(id, true);
+  }
+}
+
+function enablePendingEdit(id, enable) {
+  const ti = document.getElementById('pti-' + id);
+  const di = document.getElementById('pdi-' + id);
+  const meta = document.getElementById('pmeta-' + id);
+  const pri = document.getElementById('ppri-' + id);
+  const resp = document.getElementById('presp-' + id);
+  const date = document.getElementById('pdate-' + id);
+  const editBtn = document.getElementById('pedit-' + id);
+  // Find the card by looking for the parent pending-item
+  const allCards = document.querySelectorAll('.pending-item');
+  let card = null;
+  allCards.forEach(c => { if (c.querySelector('#pti-' + id)) card = c; });
+
+  const readLabel = document.getElementById('pmeta-read-' + id);
+  if (enable) {
+    if (ti) { ti.removeAttribute('readonly'); ti.style.cursor = 'text'; ti.style.pointerEvents = 'auto'; ti.focus(); ti.select(); }
+    if (di) { di.removeAttribute('readonly'); di.style.cursor = 'text'; di.style.pointerEvents = 'auto'; }
+    if (meta) { meta.style.display = 'flex'; meta.style.pointerEvents = 'auto'; }
+    if (readLabel) readLabel.style.display = 'none';
+    if (pri) pri.disabled = false;
+    if (resp) { resp.removeAttribute('readonly'); resp.style.pointerEvents = 'auto'; }
+    if (date) date.disabled = false;
+    if (editBtn) { editBtn.textContent = '✓'; editBtn.title = 'Guardar'; editBtn.style.display = 'flex'; }
+    if (card) card.classList.add('editing');
+  } else {
+    if (ti) { ti.setAttribute('readonly',''); ti.style.cursor = 'default'; ti.style.pointerEvents = 'none'; }
+    if (di) { di.setAttribute('readonly',''); di.style.cursor = 'default'; di.style.pointerEvents = 'none'; }
+    if (meta) { meta.style.display = 'none'; meta.style.pointerEvents = 'none'; }
+    if (readLabel) readLabel.style.display = 'block';
+    if (pri) pri.disabled = true;
+    if (resp) { resp.setAttribute('readonly',''); resp.style.pointerEvents = 'none'; }
+    if (date) date.disabled = true;
+    if (editBtn) { editBtn.textContent = '✎'; editBtn.title = 'Editar'; }
+    if (card) card.classList.remove('editing');
+  }
+}
+
+function savePendingEdit(id) {
+  const ti = document.getElementById('pti-' + id);
+  const di = document.getElementById('pdi-' + id);
+  const pri = document.getElementById('ppri-' + id);
+  const resp = document.getElementById('presp-' + id);
+  const date = document.getElementById('pdate-' + id);
+
+  const p = state.tarefas.find(x => x.id === id);
+  if (p) {
+    if (ti) p.title = ti.value;
+    if (di) p.detail = di.value;
+    if (pri) p.priority = pri.value;
+    if (resp) p.responsible = resp.value;
+    if (date) p.deadline = date.value;
+    saveTarefas();
+  }
+
+  editingPendingId = null;
+  enablePendingEdit(id, false);
+
+  // Update priority pill without full re-render
+  const pill = document.getElementById('ppill-' + id);
+  if (pill && p) {
+    pill.className = `priority ${p.priority}`;
+    pill.textContent = p.priority==='high'?'urgente':p.priority==='med'?'médio':'baixo';
+  }
+  renderStats();
+  notify('✓ Tarefa guardada');
+}
+
+function updatePendingField(id, field, value) {
+  const p = state.tarefas.find(x => x.id === id);
+  if (!p || p[field] === value) return;
+  p[field] = value;
+  saveTarefas();
+  // Re-render stats silently (no full re-render to preserve focus)
+  renderStats && renderStats();
+}
+
+function renderView() {
+  showView(state.currentView, state.currentProject);
+}
+
+// ── EMAIL NOTIFICATIONS (Gmail via Claude MCP) ───────────────────────────────
+const sentEmails = new Set(JSON.parse(localStorage.getItem('ep-sent-emails') || '[]'));
+
+function saveSentEmails() {
+  localStorage.setItem('ep-sent-emails', JSON.stringify([...sentEmails]));
+}
+
+// Email address book — maps responsible names to emails
+let emailBook = JSON.parse(localStorage.getItem('ep-email-book') || '{}');
+function saveEmailBook() { localStorage.setItem('ep-email-book', JSON.stringify(emailBook)); }
+
+function getEmailForResponsible(name) {
+  // Check email book first
+  if (emailBook[name]) return emailBook[name];
+  // Try to find in tecnicos (from equipa page)
+  const stored = localStorage.getItem('ep-tecnicos');
+  if (stored) {
+    const tecnicos = JSON.parse(stored);
+    const match = tecnicos.find(t => t.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(t.name.split(' ')[0].toLowerCase()));
+    if (match?.email) return match.email;
+  }
+  return null;
+}
+
+async function sendPendingEmail(pendingId, auto = false) {
+  const p = state.tarefas.find(x => x.id === pendingId);
+  if (!p) return;
+  const proj = state.projects.find(x => x.id === p.projectId);
+
+  // Get or ask for email
+  let toEmail = getEmailForResponsible(p.responsible);
+  if (!toEmail) {
+    toEmail = prompt(`Email de ${p.responsible}:`);
+    if (!toEmail || !toEmail.includes('@')) { notify('Email inválido'); return; }
+    emailBook[p.responsible] = toEmail;
+    saveEmailBook();
+  }
+
+  const priorityLabel = p.priority === 'high' ? '🔴 URGENTE' : p.priority === 'med' ? '🟡 Médio' : '🟢 Baixo';
+  const subject = `[Europalco] Tarefa ${p.priority === 'high' ? 'URGENTE' : ''}: ${p.title}`;
+  const body = `Olá ${p.responsible.split(' ')[0]},
+
+Existe um tarefa que necessita da tua atenção${p.priority === 'high' ? ' com carácter urgente' : ''}:
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+${priorityLabel} — ${p.title}
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+Projeto: ${proj?.name || '—'}
+Local: ${proj?.venue || '—'}
+Data do evento: ${proj?.date ? formatDate(proj.date) : '—'}
+
+Descrição:
+${p.detail || '(sem detalhe adicional)'}
+
+Prazo: ${p.deadline ? formatDate(p.deadline) : '—'}
+Responsável: ${p.responsible}
+
+Por favor confirma que tomaste conhecimento e trata deste ponto o mais brevemente possível.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+Gestão de Projetos — Europalco
+Esta mensagem foi enviada automaticamente pela plataforma de gestão de projetos.`;
+
+  // Send via Gmail MCP
+  notify('A enviar email...');
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        mcp_servers: [{ type: 'url', url: 'https://gmail.mcp.claude.com/mcp', name: 'gmail' }],
+        system: 'És um assistente que envia emails via Gmail. Quando pedido, envia o email exactamente como especificado sem alterações. Confirma apenas com "Email enviado com sucesso."',
+        messages: [{
+          role: 'user',
+          content: `Envia um email com os seguintes dados:
+Para: ${toEmail}
+Assunto: ${subject}
+Corpo:
+${body}`
+        }]
+      })
+    });
+
+    if (response.ok) {
+      sentEmails.add(pendingId);
+      saveSentEmails();
+      notify(`✓ Email enviado para ${p.responsible} (${toEmail})`);
+      showView(state.currentView, state.currentProject);
+    } else {
+      // Fallback: open mailto
+      fallbackMailto(toEmail, subject, body, pendingId, p.responsible);
+    }
+  } catch(e) {
+    // Fallback: open mailto link
+    fallbackMailto(toEmail, subject, body, pendingId, p.responsible);
+  }
+}
+
+function fallbackMailto(toEmail, subject, body, pendingId, responsible) {
+  const mailto = `mailto:${toEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(mailto, '_blank');
+  sentEmails.add(pendingId);
+  saveSentEmails();
+  notify(`✓ Email preparado para ${responsible}`);
+  showView(state.currentView, state.currentProject);
+}
+
+// Auto-send when urgent pending is created
+const originalConfirmModal = window.confirmModal;
+function checkAutoEmail(pendingId) {
+  const p = state.tarefas.find(x => x.id === pendingId);
+  if (p && p.priority === 'high' && !sentEmails.has(pendingId)) {
+    const toEmail = getEmailForResponsible(p.responsible);
+    if (toEmail) {
+      setTimeout(() => sendPendingEmail(pendingId, true), 500);
+    } else {
+      // Ask if they want to send
+      setTimeout(() => {
+        const send = confirm(`Tarefa urgente criado.
+Enviar notificação por email a ${p.responsible}?`);
+        if (send) sendPendingEmail(pendingId, true);
+      }, 300);
+    }
+  }
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 // Check if copilot received context (for when opened from copilot launch)
 const urlParams = new URLSearchParams(window.location.search);
@@ -788,7 +1302,105 @@ if (urlParams.get('ctx')) {
   // (Handled by the copilot app itself)
 }
 
-showView('dashboard');
+// Init: show dashboard without pushing to history
+state.currentView = 'dashboard';
+document.getElementById('nav-dashboard').classList.add('active');
+document.getElementById('topbar-title').textContent = 'Dashboard';
+renderDashboard();
+requestAnimationFrame(() => {
+  document.querySelectorAll('.pending-detail-input').forEach(ta => {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+  });
+});
+</script>
+
+<!-- CLOCK PICKER -->
+<div class="clock-overlay" id="clock-overlay" onclick="closeClock()"></div>
+<div class="clock-picker" id="clock-picker">
+  <div class="clock-label">Seleccionar hora</div>
+  <div class="clock-cols">
+    <div class="clock-col">
+      <div class="clock-arrow" onclick="changeHour(1)">▲</div>
+      <div class="clock-val" id="clock-h" onwheel="onWheelHour(event)">00</div>
+      <div class="clock-arrow" onclick="changeHour(-1)">▼</div>
+    </div>
+    <div class="clock-sep" style="font-size:32px;font-weight:500;color:var(--text);padding-bottom:4px">:</div>
+    <div class="clock-col">
+      <div class="clock-arrow" onclick="changeMin(1)">▲</div>
+      <div class="clock-val" id="clock-m" onwheel="onWheelMin(event)">00</div>
+      <div class="clock-arrow" onclick="changeMin(-1)">▼</div>
+    </div>
+  </div>
+  <button class="clock-confirm" onclick="confirmClock()">Confirmar</button>
+</div>
+
+<script>
+// ── CLOCK PICKER ──────────────────────────────────────────────────────────────
+let clockH = 0, clockM = 0, clockTargetId = null, clockCallback = null;
+
+function openClock(inputEl, tlId) {
+  const val = inputEl.value || '00:00';
+  const parts = val.split(':');
+  clockH = parseInt(parts[0]) || 0;
+  clockM = parseInt(parts[1]) || 0;
+  clockTargetId = tlId;
+  clockCallback = (time) => {
+    inputEl.value = time;
+    updateTL(tlId, 'time', time);
+  };
+  renderClock();
+
+  // Position picker near the input
+  const rect = inputEl.getBoundingClientRect();
+  const picker = document.getElementById('clock-picker');
+  let top = rect.bottom + 6;
+  let left = rect.left;
+  if (left + 200 > window.innerWidth) left = window.innerWidth - 210;
+  if (top + 220 > window.innerHeight) top = rect.top - 226;
+  picker.style.top = top + 'px';
+  picker.style.left = left + 'px';
+
+  document.getElementById('clock-overlay').classList.add('show');
+  picker.classList.add('show');
+}
+
+function closeClock() {
+  document.getElementById('clock-overlay').classList.remove('show');
+  document.getElementById('clock-picker').classList.remove('show');
+  clockCallback = null;
+}
+
+function renderClock() {
+  document.getElementById('clock-h').textContent = String(clockH).padStart(2,'0');
+  document.getElementById('clock-m').textContent = String(clockM).padStart(2,'0');
+}
+
+function changeHour(delta) {
+  clockH = ((clockH + delta) + 24) % 24;
+  renderClock();
+}
+
+function changeMin(delta) {
+  clockM = ((clockM + delta) + 60) % 60;
+  renderClock();
+}
+
+function onWheelHour(e) {
+  e.preventDefault();
+  changeHour(e.deltaY < 0 ? 1 : -1);
+}
+
+function onWheelMin(e) {
+  e.preventDefault();
+  changeMin(e.deltaY < 0 ? 1 : -1);
+}
+
+function confirmClock() {
+  const time = String(clockH).padStart(2,'0') + ':' + String(clockM).padStart(2,'0');
+  if (clockCallback) clockCallback(time);
+  closeClock();
+}
 </script>
 </body>
 </html>
