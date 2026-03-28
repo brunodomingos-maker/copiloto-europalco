@@ -2,8 +2,8 @@
   "name": "Co-piloto Europalco",
   "short_name": "Co-piloto",
   "description": "Assistente de produção em tempo real para eventos Europalco",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/copiloto-europalco/",
+  "scope": "/copiloto-europalco/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFFFFF",
@@ -11,24 +11,26 @@
   "lang": "pt",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icons/icon-180.png",
+      "src": "icon-180.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     }
   ],
-  "categories": ["productivity", "utilities"],
-  "screenshots": []
+  "categories": [
+    "productivity",
+    "utilities"
+  ]
 }

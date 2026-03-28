@@ -16,14 +16,14 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Co-piloto">
-  <link rel="apple-touch-icon" href="icons/icon-180.png">
-  <link rel="apple-touch-startup-image" href="icons/icon-512.png">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="apple-touch-startup-image" href="icon-512.png">
 
   <!-- Service Worker registration -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register('sw.js', { scope: '/copiloto-europalco/' })
           .then(r => console.log('SW registered'))
           .catch(e => console.log('SW error', e));
       });
@@ -1095,7 +1095,7 @@ function addToLog(text) {
 <!-- iOS Install Banner -->
 <div id="ios-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:14px 16px 32px;background:#fff;border-top:1px solid rgba(0,0,0,0.1);box-shadow:0 -4px 20px rgba(0,0,0,0.08);">
   <div style="display:flex;align-items:flex-start;gap:12px">
-    <img src="icons/icon-180.png" style="width:44px;height:44px;border-radius:10px;flex-shrink:0">
+    <img src="icon-180.png" style="width:44px;height:44px;border-radius:10px;flex-shrink:0">
     <div style="flex:1">
       <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#111;margin-bottom:3px">Instalar Co-piloto</div>
       <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(17,17,17,0.55);line-height:1.5">
