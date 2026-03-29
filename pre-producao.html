@@ -1716,6 +1716,29 @@ function editProjectCBId(projectId) {
   if (p.cbEventId) notify('✓ Evento CrewBrain associado: ' + p.cbEventId);
 }
 
+// ── DELETE TECNICO (global) ──────────────────────────────────────────────────
+function deleteTecnicoFromGrid(id) {
+  var allTecs = JSON.parse(localStorage.getItem('ep-tecnicos') || '[]');
+  var t = allTecs.find(function(x){ return String(x.id) === String(id); });
+  if (!t) return;
+  if (!confirm('Eliminar "' + t.name + '" da base de dados?')) return;
+  allTecs = allTecs.filter(function(x){ return String(x.id) !== String(id); });
+  localStorage.setItem('ep-tecnicos', JSON.stringify(allTecs));
+  // Update in-memory tecnicos if in equipa view
+  if (typeof tecnicos !== 'undefined') {
+    tecnicos = allTecs;
+  }
+  // Re-render if equipa view is active
+  var grid = document.getElementById('tecnico-grid');
+  if (grid) {
+    if (typeof renderEquipaStats === 'function') renderEquipaStats();
+    if (typeof renderGrid === 'function') renderGrid();
+  }
+  // Show notification
+  var n = document.getElementById('notif');
+  if (n) { n.textContent = '✓ ' + t.name + ' eliminado'; n.classList.add('show'); setTimeout(function(){ n.classList.remove('show'); }, 2800); }
+}
+
 // ── CREWBRAIN CONFIG (global) ────────────────────────────────────────────────
 function getCBConfigGlobal() {
   return {
@@ -3003,18 +3026,6 @@ function notify(msg) {
   setTimeout(() => n.classList.remove('show'), 2800);
 }
 
-// ── DELETE TECNICO FROM GRID ─────────────────────────────────────────────────
-function deleteTecnicoFromGrid(id) {
-  const t = tecnicos.find(x => x.id == id);
-  if (!t) return;
-  if (!confirm('Eliminar "' + t.name + '" da base de dados?')) return;
-  tecnicos = tecnicos.filter(x => x.id != id);
-  save();
-  renderEquipaStats();
-  renderGrid();
-  notify('✓ ' + t.name + ' eliminado');
-}
-
 // ── INLINE EDITING ───────────────────────────────────────────────────────────
 function updateCardField(id, field, value, inputEl) {
   const t = tecnicos.find(x => x.id == id);
@@ -3406,7 +3417,6 @@ window.removeCustomCategory = removeCustomCategory;
 window.addCustomEquip = addCustomEquip;
 window.toggleCatManager = toggleCatManager;
 window.setStarInline = setStarInline;
-window.deleteTecnicoFromGrid = deleteTecnicoFromGrid;
 window.updateCardField = updateCardField;
 window.toggleCardSkills = toggleCardSkills;
 window.updateCardSkill = updateCardSkill;
