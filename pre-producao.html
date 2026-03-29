@@ -405,7 +405,8 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .modal-section-title-eq { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; color: var(--dim); text-transform: uppercase; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .modal-footer-eq { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
 .btn-save-eq { flex: 2; padding: 10px; background: var(--y); border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px; font-weight: 700; color: #111; cursor: pointer; }
-.btn-delete-eq { padding: 10px 16px; background: none; border: 1px solid rgba(192,57,43,0.25); border-radius: 8px; font-family: var(--mono); font-size: 11px; color: var(--red); cursor: pointer; }
+.btn-delete-eq { padding: 7px 16px; background: none; border: none; font-family: var(--mono); font-size: 11px; color: rgba(192,57,43,0.55); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; transition: color 0.15s; }
+.btn-delete-eq:hover { color: var(--red); }
 
   /* EQUIPA DO PROJETO */
   .proj-team-grid { display: flex; flex-direction: column; gap: 5px; }
@@ -2193,11 +2194,15 @@ function confirmClock() {
       </div>
 
     </div>
-    <div class="modal-footer">
-      <button class="btn-delete" id="btn-delete" onclick="deleteTecnico()" style="display:none">Eliminar</button>
-      <button class="btn-cancel" onclick="window.toggleCatManager && window.toggleCatManager()" id="btn-cat-manager" style="font-size:10px;padding:10px 12px">⊕ Categorias</button>
-      <button class="btn-cancel" onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()">Cancelar</button>
-      <button class="btn-save" onclick="saveTecnico()">Guardar perfil</button>
+    <div class="modal-footer" style="flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px">
+        <button class="btn-cancel" onclick="window.toggleCatManager && window.toggleCatManager()" id="btn-cat-manager" style="font-size:10px;padding:8px 12px;flex:none">⊕ Cat.</button>
+        <button class="btn-cancel" onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()">Cancelar</button>
+        <button class="btn-save" onclick="saveTecnico()">Guardar perfil</button>
+      </div>
+      <div style="text-align:center">
+        <button class="btn-delete-eq" id="btn-delete" onclick="deleteTecnico()" style="display:none">Eliminar técnico permanentemente</button>
+      </div>
     </div>
   </div>
 </div>
