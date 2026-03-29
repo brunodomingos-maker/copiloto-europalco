@@ -1894,64 +1894,57 @@ function editVan(projectId, idx, el) {
 }
 
 async function syncTeamFromCB(projectId) {
-  const cfg = getCBConfigGlobal();
-  if (!cfg.url || !cfg.auth) { notify('CrewBrain não configurado — vai a Equipa Técnica para configurar'); return; }
+  const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
+  if (!proxyUrl) { notify('Proxy GAS não configurado — vai a Google Sheets'); return; }
   notify('A sincronizar equipa do CrewBrain...');
   try {
-    const baseUrl = cfg.url.replace(/\/v2$/, '').replace(/\/$/, '');
-    const authHeader = 'Basic ' + btoa(cfg.auth);
     const proj = state.projects.find(function(x){ return x.id === projectId; });
-    const rawId = (proj && proj.cbEventId) ? proj.cbEventId : cfg.eventId;
-    if (!rawId) { notify('Associa primeiro o ID do projeto CrewBrain (botão ⚙ CrewBrain)'); return; }
-    // Accept P260449, C260780, or plain 260449
-    const eventId = rawId.replace(/[^0-9]/g, '');
-    if (!eventId) { notify('ID inválido: ' + rawId); return; }
-    // Try allNamesInEvent endpoint (works for both project events and sub-events)
-    const endpoint = baseUrl + '/api/v2/events/' + eventId + '/resources/allNamesInEvent';
-
-    // Use Anthropic API as proxy to bypass CORS
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 8000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        system: 'You make HTTP GET requests and return ONLY the raw JSON response. Nothing else.',
-        messages: [{ role: 'user', content: 'Make a GET request to: ' + endpoint + ' with header Authorization: ' + authHeader + ' and Accept: application/json. Return ONLY the raw JSON response, no explanations.' }]
-      })
-    });
-    if (!res.ok) throw new Error('API error ' + res.status);
-    const apiData = await res.json();
-    const text = apiData.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
-    var cbData = null;
-    // Try to find JSON array or object in response
-    var jsonMatch = text.match(/\{[\s\S]*"data"[\s\S]*\}/) || text.match(/\[[\s\S]*\]/);
-    if (jsonMatch) { try { cbData = JSON.parse(jsonMatch[0]); } catch(e2) {
-      // Try finding any JSON
-      var m2 = text.match(/\{[\s\S]*\}/);
-      if (m2) try { cbData = JSON.parse(m2[0]); } catch(e3) {}
-    }}
-    if (!cbData) throw new Error('Sem dados válidos. Verifica o ID do projeto.');
-    const staff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.resources || cbData.staff || []);
+    const rawId = (proj && proj.cbEventId) ? proj.cbEventId : '';
+    if (!rawId) { notify('Associa primeiro o ID CrewBrain ao projeto (botão ⚙ CrewBrain)'); return; }
+    const numId = rawId.replace(/[^0-9]/g, '');
+    let eventId = numId;
+    if (rawId.toUpperCase().startsWith('P')) {
+      try {
+        notify('A procurar eventos de P' + numId + '...');
+        const evRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/events?projectId=' + numId + '&limit=10'));
+        if (evRes.ok) {
+          const evData = await evRes.json();
+          const events = (evData.data && evData.data.data) || [];
+          if (events.length > 0) {
+            eventId = String(events[0].ID || events[0].id || numId);
+            notify('Evento C' + eventId + ' encontrado. A carregar equipa...');
+          }
+        }
+      } catch(e2) {}
+    }
+    const gasUrl = proxyUrl + '?path=' + encodeURIComponent('/events/' + eventId + '/resources/allNamesInEvent');
+    const res = await fetch(gasUrl);
+    if (!res.ok) throw new Error('Proxy error ' + res.status);
+    const proxyData = await res.json();
+    if (proxyData.error) throw new Error(proxyData.error);
+    const cbData = proxyData.data;
+    if (!cbData) throw new Error('Sem dados');
+    const staff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.resources || []);
     const team = getProjectTeam(projectId);
-    const existing = new Set(team.map(m => m.name.toLowerCase()));
+    const existing = new Set(team.map(function(m){ return m.name.toLowerCase(); }));
     let added = 0;
-    staff.forEach(item => {
-      const name = (item.name || item.fullName || ((item.firstName||'') + ' ' + (item.lastName||'')).trim()).trim();
+    staff.forEach(function(item) {
+      const name = (item.FullName || ((item.Firstname||'') + ' ' + (item.Lastname||'')).trim() || '').trim();
       if (name && !existing.has(name.toLowerCase())) {
-        team.push({ tecnicoId: null, name, role: item.role||item.function||'', phone: item.phone||'', van: '' });
+        team.push({ tecnicoId: item.ID || null, name: name, role: item.Function || '', phone: item.Phone || '', van: '' });
         existing.add(name.toLowerCase());
         added++;
       }
     });
     saveProjectTeam(projectId, team);
-    document.getElementById('proj-team-' + projectId).innerHTML = renderProjectTeamHTML(projectId);
-    notify('✓ ' + added + ' técnico' + (added!==1?'s':'') + ' importado' + (added!==1?'s':'') + ' do CrewBrain');
+    var el = document.getElementById('proj-team-' + projectId);
+    if (el) el.innerHTML = renderProjectTeamHTML(projectId);
+    notify('✓ ' + added + ' técnico' + (added !== 1 ? 's' : '') + ' importado' + (added !== 1 ? 's' : '') + ' do CrewBrain');
   } catch(e) {
     notify('Erro CrewBrain: ' + e.message);
   }
 }
+window.syncTeamFromCB = syncTeamFromCB;
 
 // ── OCORRÊNCIAS ──────────────────────────────────────────────────────────────
 function getOcorrencias() {
@@ -3574,3 +3567,13 @@ document.addEventListener('keydown', function(e) {
 
 </body>
 </html>
+
+window.addTecnicoToProject = addTecnicoToProject;
+window.removeTecnicoFromProject = removeTecnicoFromProject;
+window.editVan = editVan;
+window.editProjectCBId = editProjectCBId;
+window.deleteProject = deleteProject;
+window.addOcorrencia = addOcorrencia;
+window.toggleOcorrencia = toggleOcorrencia;
+window.deleteOcorrencia = deleteOcorrencia;
+window.renderOccList = renderOccList;
