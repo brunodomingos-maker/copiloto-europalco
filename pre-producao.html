@@ -2027,7 +2027,7 @@ function confirmClock() {
 
 <!-- EQUIPA MODAL -->
 <!-- MODAL -->
-<div class="modal-overlay" id="eq-modal-overlay" onclick="maybeClose(event)">
+<div class="modal-overlay" id="eq-modal-overlay" onclick="maybeCloseEq ? maybeCloseEq(event) : null">
   <div class="modal" id="eq-modal">
     <div class="modal-head">
       <div class="modal-avatar" id="modal-avatar" style="background:#F2C200">AB</div>
@@ -2035,7 +2035,7 @@ function confirmClock() {
         <div class="modal-name" id="modal-title-name">Novo Técnico</div>
         <div class="modal-role" id="modal-title-role">Preenche os dados abaixo</div>
       </div>
-      <button onclick="closeModal()" style="margin-left:auto;background:none;border:none;font-size:20px;color:var(--dim);cursor:pointer">×</button>
+      <button onclick="closeModalEq ? closeModalEq() : closeModal()" style="margin-left:auto;background:none;border:none;font-size:20px;color:var(--dim);cursor:pointer">×</button>
     </div>
     <div class="modal-body">
 
@@ -2129,8 +2129,8 @@ function confirmClock() {
     </div>
     <div class="modal-footer">
       <button class="btn-delete" id="btn-delete" onclick="deleteTecnico()" style="display:none">Eliminar</button>
-      <button class="btn-cancel" onclick="toggleCatManager()" id="btn-cat-manager" style="font-size:10px;padding:10px 12px">⊕ Categorias</button>
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-cancel" onclick="window.toggleCatManager && window.toggleCatManager()" id="btn-cat-manager" style="font-size:10px;padding:10px 12px">⊕ Categorias</button>
+      <button class="btn-cancel" onclick="closeModalEq ? closeModalEq() : closeModal()">Cancelar</button>
       <button class="btn-save" onclick="saveTecnico()">Guardar perfil</button>
     </div>
   </div>
@@ -3354,8 +3354,8 @@ window.showCBConfig = showCBConfig;
 window.hideCBConfig = hideCBConfig;
 window.saveCBConfig = saveCBConfig;
 window.openModal = openModal;
-window.closeModal = closeModal;
-window.maybeClose = maybeClose;
+window.closeModalEq = closeModal; // equipa modal - don't override main closeModal
+window.maybeCloseEq = maybeClose;
 window.setFilter = setFilter;
 window.renderGrid = renderGrid;
 window.setStar = setStar;
