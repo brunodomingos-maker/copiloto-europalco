@@ -1091,6 +1091,11 @@ function renderConfig() {
         <label>Google Apps Script Web App URL (para leitura/escrita)</label>
         <input type="text" id="sheets-url-input" value="${localStorage.getItem('ep-sheets-url')||''}" placeholder="https://script.google.com/macros/s/...">
       </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>URL do Proxy CrewBrain (Google Apps Script)</label>
+        <input type="text" id="gas-proxy-input" value="${localStorage.getItem('ep-gas-proxy-url')||''}" placeholder="https://script.google.com/macros/s/.../exec">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--dim);margin-top:4px">Cole aqui o URL do Web App do script crewbrain-proxy.gs</div>
+      </div>
       <button class="btn-sm" onclick="saveSheetsCfg()">Guardar e testar ligação</button>
     </div>
 
@@ -1130,9 +1135,11 @@ function renderConfig() {
 function saveSheetsCfg() {
   const id = document.getElementById('sheets-id-input').value.trim();
   const url = document.getElementById('sheets-url-input').value.trim();
+  const gasProxy = document.getElementById('gas-proxy-input') ? document.getElementById('gas-proxy-input').value.trim() : '';
   state.sheetsId = id;
   localStorage.setItem('ep-sheets-id', id);
   localStorage.setItem('ep-sheets-url', url);
+  if (gasProxy) localStorage.setItem('ep-gas-proxy-url', gasProxy);
   notify('Configuração guardada — a testar ligação...');
   setTimeout(() => {
     if (url) {
@@ -3124,44 +3131,27 @@ async function syncNow() {
   const cfg = getCBConfig();
   if (!cfg.url || !cfg.auth) { setCBStatus('off', 'CrewBrain — configurar'); return; }
 
+  const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
+  if (!proxyUrl) {
+    setCBStatus('err', 'Proxy GAS não configurado');
+    notify('Configura o URL do proxy em Configuração → Google Sheets');
+    return;
+  }
+
   setCBStatus('loading', 'A sincronizar...');
   const syncBtn = document.getElementById('btn-sync');
   if (syncBtn) syncBtn.textContent = '↻ ...';
 
   try {
-    const baseUrl = cfg.url.replace(/\/v2$/, '').replace(/\/$/, '');
-    const authHeader = 'Basic ' + btoa(cfg.auth);
-    const eventEndpoint = cfg.eventId
-      ? baseUrl + '/api/v2/events/' + cfg.eventId + '/resources/allNamesInEvent'
-      : baseUrl + '/api/v2/staff?limit=200';
-
-    // Use Anthropic API with web_search to bypass CORS
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 8000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        system: 'You make HTTP GET requests and return ONLY the raw JSON response. Nothing else. No explanations.',
-        messages: [{ role: 'user', content: 'Make a GET request to: ' + eventEndpoint + ' with header Authorization: ' + authHeader + ' and Accept: application/json. Return ONLY the raw JSON response.' }]
-      })
-    });
-
-    if (!res.ok) throw new Error('API error ' + res.status);
-    const apiData = await res.json();
-    const textBlocks = apiData.content.filter(function(b){ return b.type === 'text'; });
-    const text = textBlocks.map(function(b){ return b.text; }).join('');
-
-    // Extract JSON from response
-    var cbData = null;
-    var jsonMatch = text.match(/\[([\s\S]*)\]|\{([\s\S]*)\}/);
-    if (jsonMatch) {
-      try { cbData = JSON.parse(jsonMatch[0]); } catch(e2) {}
-    }
-    if (!cbData) throw new Error('Sem dados válidos do CrewBrain');
-
-    const rawStaff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.resources || cbData.staff || []);
+    const gasUrl = proxyUrl + '?path=' + encodeURIComponent('/staff?limit=200');
+    const res = await fetch(gasUrl);
+    if (!res.ok) throw new Error('Proxy error ' + res.status);
+    const proxyData = await res.json();
+    if (proxyData.error) throw new Error(proxyData.error);
+    if (proxyData.status && proxyData.status !== 200) throw new Error('CrewBrain ' + proxyData.status);
+    const cbData = proxyData.data;
+    if (!cbData) throw new Error('Sem dados do CrewBrain');
+    const rawStaff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.staff || []);
     const staff = parseStaff(rawStaff);
     if (staff.length === 0) throw new Error('Nenhum técnico encontrado');
 
