@@ -2592,7 +2592,7 @@ function openModal(id) {
   document.getElementById('eq-modal-overlay').classList.add('show');
 }
 
-function closeModalEq() { document.document.getElementById('eq-modal-overlay') && document.getElementById('eq-modal-overlay').classList.remove('show'); }
+function closeModalEq() { var el = document.getElementById('eq-modal-overlay'); if(el) el.classList.remove('show'); }
 function maybeCloseEq(e) { if (e.target === document.getElementById('eq-modal-overlay')) closeModal(); }
 
 function updateModalHeader() {
