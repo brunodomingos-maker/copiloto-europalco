@@ -2076,7 +2076,7 @@ function occFormHTML(projectId) {
       '<select id="occ-tec-input"><option value="">— Técnico envolvido</option>' +
         allTecs.map(function(t){ return '<option value="' + t.id + '">' + t.name + '</option>'; }).join('') +
       '</select>' +
-      '<div style="display:flex;gap:6px">' +'<button class="btn-sm" onclick="addOcorrencia(' + (projectId || 'null') + ')" style="height:34px;flex:2">+ Registar</button>' +'<button onclick="cpToggle()" style="height:34px;padding:0 12px;background:#111;border:none;border-radius:7px;color:#F2C200;font-size:16px;cursor:pointer;flex-shrink:0" title="Registar via co-piloto">⬡</button>' +'</div>' +
+      '<div style="display:flex;gap:6px"><button class="btn-sm" onclick="addOcorrencia(' + (projectId || 'null') + ')" style="height:34px;flex:2">+ Registar</button><button onclick="window.open(String.fromCharCode(105,110,100,101,120,46,104,116,109,108))" style="height:34px;padding:0 12px;background:#111;border:none;border-radius:7px;color:#F2C200;font-size:16px;cursor:pointer" title="Abrir co-piloto">⬡</button></div>' +
     '</div>' +
   '</div>';
 }
@@ -2646,7 +2646,7 @@ function confirmClock() {
     <div class="cp-head">
       <img src="data:image/webp;base64,UklGRvoCAABXRUJQVlA4WAoAAAAYAAAAAwEATwAAQUxQSF4AAAABR6AQABA01z9APBEVEQEvc+a7YBVJVqP9RBoKkICOHJznDHcV0X+jbds4dBrdbkDZQrFQtj8rBLHkAOjngOoQ5ZGYH8FN3gUjGBnBos/xX5KU6W1RUuJFMoKb/GMFVlA4IPABAABwEgCdASoEAVAAPnU4mEikoyKhJtVY8JAOiWVu7mFQALQ7jPYOgK5P/Jc5P4c/133AfQDPO+YDzqv4B/gPYB6AH9V/gHWQegB/AP7B6WX7R/Eb+on7AewABIcTphsqqBu1i4Tifayj0RWk+p3MHk7ioJGAfj7UgArs+X+qhi0cn5IXXzMdCdVRtK5OtVz+Smy+jxbvzDpIkkgflgAA/vuc1T4rn//iAI/+x/5GBo/+j/yMDR8xkzywmI3uywzji4fou7Xr/ttsgaoX/622QNUL+RYuH7Cxer9vWAmjL/DA9ikC7rkydTe7+lul/VLPVM1j/afi3pozL0THQHOEueOZXQblKTc2976SwjQvCD0206Nir45CHz9E2oxxo3srCB2vM+R/gzu59w21R5pFlea+yuU5T3oqQAT/udMPLmOkf68+uT7YWrKJQ6d/HbQzxYL+lYgZzYcJYNYxIygeCrc8+MxXvPvkFAT1/o9KSXxKVusyqsvxo3srB+NeZ8j/Bndz7gI2Ca/AHuKoQQ2OydvQD6dCkua5Jt119vyK3f4y+hvE+wZVLdeZZdWsLVv2p7uplvef37kFA17Nui1CyXJVZLDlq03zMD9eTzIDJQMPYZfjT6TfBELTofGIpGcSjN08DAQDnKhBut6h3V9gAAAARVhJRn4AAABFeGlmAABJSSoACAAAAAUAEgEDAAEAAAABAAAAGgEFAAEAAABKAAAAGwEFAAEAAABSAAAAKAEDAAEAAAACAAAAaYcEAAEAAABaAAAAAAAAAEgAAAABAAAASAAAAAEAAAACAAKgBAABAAAABAEAAAOgBAABAAAAUAAAAAAAAAA=" alt="Europalco">
       <span class="cp-head-label">co-piloto</span>
-      <button class="cp-close" onclick="cpToggle()">×</button>
+      <button class="cp-close" onclick="window.open('index.html','copiloto','width=420,height=700')">×</button>
     </div>
     <div class="cp-msgs" id="cp-msgs"></div>
     <div class="cp-vad">
@@ -2660,7 +2660,7 @@ function confirmClock() {
       <button class="cp-send" onclick="cpSendText()">→</button>
     </div>
   </div>
-  <button class="cp-fab" onclick="cpToggle()" title="Co-piloto">
+  <button class="cp-fab" onclick="window.open('index.html','copiloto','width=420,height=700')" title="Co-piloto">
     <img src="data:image/webp;base64,UklGRvoCAABXRUJQVlA4WAoAAAAYAAAAAwEATwAAQUxQSF4AAAABR6AQABA01z9APBEVEQEvc+a7YBVJVqP9RBoKkICOHJznDHcV0X+jbds4dBrdbkDZQrFQtj8rBLHkAOjngOoQ5ZGYH8FN3gUjGBnBos/xX5KU6W1RUuJFMoKb/GMFVlA4IPABAABwEgCdASoEAVAAPnU4mEikoyKhJtVY8JAOiWVu7mFQALQ7jPYOgK5P/Jc5P4c/133AfQDPO+YDzqv4B/gPYB6AH9V/gHWQegB/AP7B6WX7R/Eb+on7AewABIcTphsqqBu1i4Tifayj0RWk+p3MHk7ioJGAfj7UgArs+X+qhi0cn5IXXzMdCdVRtK5OtVz+Smy+jxbvzDpIkkgflgAA/vuc1T4rn//iAI/+x/5GBo/+j/yMDR8xkzywmI3uywzji4fou7Xr/ttsgaoX/622QNUL+RYuH7Cxer9vWAmjL/DA9ikC7rkydTe7+lul/VLPVM1j/afi3pozL0THQHOEueOZXQblKTc2976SwjQvCD0206Nir45CHz9E2oxxo3srCB2vM+R/gzu59w21R5pFlea+yuU5T3oqQAT/udMPLmOkf68+uT7YWrKJQ6d/HbQzxYL+lYgZzYcJYNYxIygeCrc8+MxXvPvkFAT1/o9KSXxKVusyqsvxo3srB+NeZ8j/Bndz7gI2Ca/AHuKoQQ2OydvQD6dCkua5Jt119vyK3f4y+hvE+wZVLdeZZdWsLVv2p7uplvef37kFA17Nui1CyXJVZLDlq03zMD9eTzIDJQMPYZfjT6TfBELTofGIpGcSjN08DAQDnKhBut6h3V9gAAAARVhJRn4AAABFeGlmAABJSSoACAAAAAUAEgEDAAEAAAABAAAAGgEFAAEAAABKAAAAGwEFAAEAAABSAAAAKAEDAAEAAAACAAAAaYcEAAEAAABaAAAAAAAAAEgAAAABAAAASAAAAAEAAAACAAKgBAABAAAABAEAAAOgBAABAAAAUAAAAAAAAAA=" alt="Co-piloto">
     <div class="cp-badge" id="cp-badge"></div>
   </button>
