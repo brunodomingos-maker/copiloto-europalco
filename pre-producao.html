@@ -528,7 +528,7 @@ let state = {
 // Demo data if empty
 if (state.projects.length === 0) {
   state.projects = [
-    { id: 1, name: 'DHL Supply Chain', client: 'DHL', venue: 'Tivoli Marina Vilamoura', date: '2026-04-11', status: 'active', color: '#F2C200', team: 'Bruno Domingos — GP — 961 026 466\nFilipa Limão — TSST — 961 026 280\nDP Riggers — Rigging externo', protocols: 'Em caso de incêndio: avisar GP via rádio, acionar protocolo hotel, usar extintor mais próximo.\nEm caso de acidente: não mover vítima, contactar Filipa Limão (961 026 280) ou 112.\nEPI obrigatórios: capacete, luvas, colete visibilidade, calçado S3.' },
+    { id: 1, name: 'DHL Supply Chain', client: 'DHL', venue: 'Tivoli Marina Vilamoura', date: '2026-04-11', status: 'active', color: '#F2C200', cbEventId: '', team: 'Bruno Domingos — GP — 961 026 466\nFilipa Limão — TSST — 961 026 280\nDP Riggers — Rigging externo', protocols: 'Em caso de incêndio: avisar GP via rádio, acionar protocolo hotel, usar extintor mais próximo.\nEm caso de acidente: não mover vítima, contactar Filipa Limão (961 026 280) ou 112.\nEPI obrigatórios: capacete, luvas, colete visibilidade, calçado S3.' },
     { id: 2, name: 'Gala Anual Millennium BCP', client: 'Millennium BCP', venue: 'Pavilhão Carlos Lopes, Lisboa', date: '2026-05-22', status: 'prep', color: '#1A5CA8', team: '', protocols: '' },
     { id: 3, name: 'Conferência Deloitte', client: 'Deloitte Portugal', venue: 'Centro de Congressos Lisboa', date: '2026-03-01', status: 'done', color: '#1E7A4A', team: '', protocols: '' },
   ];
@@ -1207,13 +1207,17 @@ function showNewProjectModal() {
     <div class="field"><label>Estado</label>
       <select id="np-status"><option value="prep">Em preparação</option><option value="active">Em curso</option></select>
     </div>
+    <div class="field">
+      <label>ID do projeto CrewBrain (P-number)</label>
+      <input type="text" id="np-cbid" placeholder="ex: P260449 ou 260449">
+    </div>
   `;
   document.getElementById('modal-confirm').textContent = 'Criar Projeto';
   state.modalAction = () => {
     const name = document.getElementById('np-name').value.trim();
     if (!name) { notify('Introduz o nome do evento'); return; }
     const colors = ['#F2C200','#1A5CA8','#1E7A4A','#C0392B','#7B2D8B'];
-    state.projects.push({ id: Date.now(), name, client: document.getElementById('np-client').value, venue: document.getElementById('np-venue').value, date: document.getElementById('np-date').value, status: document.getElementById('np-status').value, color: colors[state.projects.length % colors.length], team: '', protocols: '' });
+    state.projects.push({ id: Date.now(), name, client: document.getElementById('np-client').value, venue: document.getElementById('np-venue').value, date: document.getElementById('np-date').value, status: document.getElementById('np-status').value, color: colors[state.projects.length % colors.length], team: '', protocols: '', cbEventId: document.getElementById('np-cbid').value.trim() });
     saveProjects(); closeModal(); showView('projects'); notify('Projeto criado');
   };
   document.getElementById('modal').classList.add('show');
@@ -1576,6 +1580,10 @@ function renderProjectDetail(projectId) {
         <div style="font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px">${p.client} · ${p.venue} · ${formatDate(p.date)}</div>
       </div>
       <span class="badge ${statusClass[p.status]}" style="font-size:11px;padding:4px 12px">${statusLabels[p.status]}</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        ${p.cbEventId ? `<span style="font-family:var(--mono);font-size:10px;background:rgba(26,92,168,0.1);color:var(--blue);border:1px solid rgba(26,92,168,0.2);border-radius:5px;padding:3px 8px">CB: ${p.cbEventId}</span>` : ''}
+        <button onclick="editProjectCBId(${p.id})" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer" title="Associar evento CrewBrain">⚙ CrewBrain</button>
+      </div>
       <button onclick="showView('projects')" style="padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--dim);cursor:pointer">← Projetos</button>
     </div>
 
@@ -1671,6 +1679,19 @@ function renderProjectDetail(projectId) {
       ta.style.height = ta.scrollHeight + 'px';
     });
   });
+}
+
+// ── PROJECT CREWBRAIN ID ─────────────────────────────────────────────────────
+function editProjectCBId(projectId) {
+  const p = state.projects.find(function(x){ return x.id === projectId; });
+  if (!p) return;
+  const current = p.cbEventId || '';
+  const val = prompt('ID do evento CrewBrain para "' + p.name + '":\n(ex: C260449 ou apenas o número 260449)', current);
+  if (val === null) return; // cancelled
+  p.cbEventId = val.trim();
+  saveProjects();
+  showView('project-detail', projectId);
+  if (p.cbEventId) notify('✓ Evento CrewBrain associado: ' + p.cbEventId);
 }
 
 // ── CREWBRAIN CONFIG (global) ────────────────────────────────────────────────
@@ -1785,7 +1806,13 @@ async function syncTeamFromCB(projectId) {
   try {
     const baseUrl = cfg.url.replace(/\/v2$/, '').replace(/\/$/, '');
     const authHeader = 'Basic ' + btoa(cfg.auth);
-    const eventId = cfg.eventId || projectId;
+    const proj = state.projects.find(function(x){ return x.id === projectId; });
+    const rawId = (proj && proj.cbEventId) ? proj.cbEventId : cfg.eventId;
+    if (!rawId) { notify('Associa primeiro o ID do projeto CrewBrain (botão ⚙ CrewBrain)'); return; }
+    // Accept P260449, C260780, or plain 260449
+    const eventId = rawId.replace(/[^0-9]/g, '');
+    if (!eventId) { notify('ID inválido: ' + rawId); return; }
+    // Try allNamesInEvent endpoint (works for both project events and sub-events)
     const endpoint = baseUrl + '/api/v2/events/' + eventId + '/resources/allNamesInEvent';
 
     // Use Anthropic API as proxy to bypass CORS
@@ -1797,16 +1824,21 @@ async function syncTeamFromCB(projectId) {
         max_tokens: 8000,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         system: 'You make HTTP GET requests and return ONLY the raw JSON response. Nothing else.',
-        messages: [{ role: 'user', content: 'Make a GET request to: ' + endpoint + ' with header Authorization: ' + authHeader + ' and Accept: application/json. Return ONLY the raw JSON.' }]
+        messages: [{ role: 'user', content: 'Make a GET request to: ' + endpoint + ' with header Authorization: ' + authHeader + ' and Accept: application/json. Return ONLY the raw JSON response, no explanations.' }]
       })
     });
     if (!res.ok) throw new Error('API error ' + res.status);
     const apiData = await res.json();
     const text = apiData.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
     var cbData = null;
-    var jsonMatch = text.match(/\[([\s\S]*)\]|\{([\s\S]*)\}/);
-    if (jsonMatch) { try { cbData = JSON.parse(jsonMatch[0]); } catch(e2) {} }
-    if (!cbData) throw new Error('Sem dados do CrewBrain');
+    // Try to find JSON array or object in response
+    var jsonMatch = text.match(/\{[\s\S]*"data"[\s\S]*\}/) || text.match(/\[[\s\S]*\]/);
+    if (jsonMatch) { try { cbData = JSON.parse(jsonMatch[0]); } catch(e2) {
+      // Try finding any JSON
+      var m2 = text.match(/\{[\s\S]*\}/);
+      if (m2) try { cbData = JSON.parse(m2[0]); } catch(e3) {}
+    }}
+    if (!cbData) throw new Error('Sem dados válidos. Verifica o ID do projeto.');
     const staff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.resources || cbData.staff || []);
     const team = getProjectTeam(projectId);
     const existing = new Set(team.map(m => m.name.toLowerCase()));
