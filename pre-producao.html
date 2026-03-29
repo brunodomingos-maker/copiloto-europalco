@@ -1944,7 +1944,9 @@ window.syncTeamFromCB = async function syncTeamFromCB(projectId) {
     const resRes = await fetch(resUrl);
     if (!resRes.ok) throw new Error('Proxy error ' + resRes.status);
     const resData = await resRes.json();
-    const staff = (resData.data && resData.data.data) || [];
+    // allNamesInEvent returns plain array, proxy wraps in {status, data}
+    const raw = resData.data || [];
+    const staff = Array.isArray(raw) ? raw : (raw.data || []);
 
     // Step 3: Merge into project team
     const team = getProjectTeam(projectId);
