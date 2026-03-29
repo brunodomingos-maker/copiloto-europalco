@@ -1907,14 +1907,35 @@ async function syncTeamFromCB(projectId) {
 // ── EQUIPA VIEW ──────────────────────────────────────────────────────────────
 function renderEquipa() {
   const c = document.getElementById('content');
-  c.style.padding = '0';
+  c.style.padding = '24px';
   c.innerHTML = `
-    <iframe
-      src="equipa.html"
-      style="width:100%;height:100%;border:none;display:block"
-      title="Equipa Técnica">
-    </iframe>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="cb-sync-status" onclick="showCBConfig()" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--dim);transition:all 0.15s">
+          <div id="cb-dot" style="width:6px;height:6px;border-radius:50%;background:var(--dim);flex-shrink:0"></div>
+          <span id="cb-label">CrewBrain</span>
+        </div>
+        <button onclick="syncNow()" id="btn-sync" style="padding:5px 12px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync</button>
+        <button onclick="openModal()" style="padding:5px 12px;background:var(--y);border:none;border-radius:6px;font-family:var(--sans);font-size:12px;font-weight:700;color:#111;cursor:pointer">+ Técnico</button>
+      </div>
+    </div>
+    <div id="stats-bar-eq" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
+    <div id="eq-filters" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
+      <div class="filter-pill active" onclick="setFilter('todos',this)">Todos</div>
+      <div class="filter-pill" onclick="setFilter('som',this)">Som</div>
+      <div class="filter-pill" onclick="setFilter('luz',this)">Luz</div>
+      <div class="filter-pill" onclick="setFilter('video',this)">Vídeo</div>
+      <div class="filter-pill" onclick="setFilter('automatismos',this)">Automatismos</div>
+      <div class="filter-pill" onclick="setFilter('estruturas',this)">Estruturas</div>
+      <div class="filter-pill" onclick="setFilter('producao',this)">Produção</div>
+      <div class="filter-pill" onclick="setFilter('seguranca',this)">Segurança</div>
+      <div class="filter-pill" onclick="setFilter('senior',this)">Sénior</div>
+      <div class="filter-pill" onclick="setFilter('avaliar',this)">Por avaliar</div>
+      <input class="search-input-eq" id="search" type="text" placeholder="Pesquisar..." oninput="renderGrid()">
+    </div>
+    <div class="tecnico-grid" id="tecnico-grid"></div>
   `;
+  initEquipa();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
@@ -2072,7 +2093,7 @@ function confirmClock() {
 
 <!-- EQUIPA MODAL -->
 <!-- MODAL -->
-<div class="modal-overlay" id="eq-modal-overlay" onclick="maybeCloseEq ? maybeCloseEq(event) : null">
+<div class="modal-overlay" id="eq-modal-overlay" onclick="if(typeof maybeCloseEq==='function')maybeCloseEq(event)">
   <div class="modal" id="eq-modal">
     <div class="modal-head">
       <div class="modal-avatar" id="modal-avatar" style="background:#F2C200">AB</div>
@@ -2080,7 +2101,7 @@ function confirmClock() {
         <div class="modal-name" id="modal-title-name">Novo Técnico</div>
         <div class="modal-role" id="modal-title-role">Preenche os dados abaixo</div>
       </div>
-      <button onclick="closeModalEq ? closeModalEq() : closeModal()" style="margin-left:auto;background:none;border:none;font-size:20px;color:var(--dim);cursor:pointer">×</button>
+      <button onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()" style="margin-left:auto;background:none;border:none;font-size:20px;color:var(--dim);cursor:pointer">×</button>
     </div>
     <div class="modal-body">
 
@@ -2175,7 +2196,7 @@ function confirmClock() {
     <div class="modal-footer">
       <button class="btn-delete" id="btn-delete" onclick="deleteTecnico()" style="display:none">Eliminar</button>
       <button class="btn-cancel" onclick="window.toggleCatManager && window.toggleCatManager()" id="btn-cat-manager" style="font-size:10px;padding:10px 12px">⊕ Categorias</button>
-      <button class="btn-cancel" onclick="closeModalEq ? closeModalEq() : closeModal()">Cancelar</button>
+      <button class="btn-cancel" onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()">Cancelar</button>
       <button class="btn-save" onclick="saveTecnico()">Guardar perfil</button>
     </div>
   </div>
@@ -2240,232 +2261,6 @@ function confirmClock() {
 </div>
 
 <script>
-var cpOpen = false, cpMsgs = [], cpVAD = false, cpStream = null, cpCtx = null, cpAna = null;
-var cpSpeaking = false, cpTimer = null, cpFrame = null, cpRec = null, cpChunks = [];
-var CP_THRESH = 16, CP_SIL = 1200;
-
-function cpToggle() {
-  cpOpen = !cpOpen;
-  document.getElementById('cp-bubble').classList.toggle('open', cpOpen);
-  document.getElementById('cp-badge').classList.remove('show');
-  if (cpOpen && cpMsgs.length === 0) cpWelcome();
-}
-
-function cpWelcome() {
-  var ap = state.projects.find(function(p){return p.status==='active';});
-  var ot = state.tarefas.filter(function(t){return !t.done;}).length;
-  var urg = state.tarefas.filter(function(t){return !t.done && t.priority==='high';}).length;
-  var msg = 'Olá Bruno!';
-  if (ap) msg += ' Evento activo: **' + ap.name + '** · ' + formatDate(ap.date) + '.';
-  if (ot) msg += ' ' + ot + ' tarefa' + (ot>1?'s':'') + ' em aberto' + (urg?' ('+urg+' urgentes)':'') + '.';
-  msg += ' Podes falar por voz ou escrever.';
-  cpAddMsg('ai', msg);
-}
-
-function cpSystem() {
-  var ap = state.projects.find(function(p){return p.status==='active';});
-  var ot = state.tarefas.filter(function(t){return !t.done;});
-  var urg = ot.filter(function(t){return t.priority==='high';});
-  var tl = state.timeline
-    .filter(function(t){return t.projectId===(ap?ap.id:0);})
-    .sort(function(a,b){return ((a.date||'')+(a.time||''))>((b.date||'')+(b.time||''))?1:-1;})
-    .map(function(t){return (t.date||'')+' '+t.time+' - '+t.desc+' ('+t.dept+')';})
-    .join('; ');
-  var lines = [
-    'Es o co-piloto da Europalco integrado na Gestao de Projetos do Bruno Domingos.',
-    'Evento activo: '+(ap?ap.name+' em '+(ap.venue||'')+' '+formatDate(ap.date):'nenhum'),
-    'Tarefas em aberto: '+ot.length+' ('+urg.length+' urgentes)',
-    'Urgentes: '+(urg.length?urg.map(function(t){return t.title+' resp:'+t.responsible+' prazo:'+formatDate(t.deadline);}).join('; '):'nenhuma'),
-    'Timeline: '+(tl||'sem timeline'),
-    'Responde em portugues europeu, conciso, max 3-4 frases. Usa **negrito** para destacar.'
-  ];
-  return lines.join(' | ');
-}
-
-function cpSendText() {
-  var inp = document.getElementById('cp-input');
-  var t = inp.value.trim();
-  if (!t) return;
-  inp.value = '';
-  cpSend(t);
-}
-
-function cpSend(text) {
-  cpAddMsg('user', text);
-  cpMsgs.push({role:'user', content:text});
-  cpShowThink();
-  fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:500, system:cpSystem(), messages:cpMsgs})
-  }).then(function(r){return r.json();}).then(function(d){
-    cpHideThink();
-    var reply = (d.content && d.content[0] && d.content[0].text) || '';
-    if (!reply) { cpFallback(text); return; }
-    cpAddMsg('ai', reply);
-    cpMsgs.push({role:'assistant', content:reply});
-    cpSpeak(reply);
-    if (!cpOpen) document.getElementById('cp-badge').classList.add('show');
-  }).catch(function(){ cpHideThink(); cpFallback(text); });
-}
-
-function cpFallback(text) {
-  var ap = state.projects.find(function(p){return p.status==='active';});
-  var urg = state.tarefas.filter(function(t){return !t.done && t.priority==='high';}).length;
-  var tl = text.toLowerCase();
-  var reply = '';
-  if (tl.indexOf('tarefa')>=0||tl.indexOf('urgente')>=0) {
-    reply = 'Tens **' + state.tarefas.filter(function(t){return !t.done;}).length + ' tarefas em aberto**, ' + urg + ' urgentes.';
-  } else if (tl.indexOf('evento')>=0||tl.indexOf('projeto')>=0) {
-    reply = ap ? 'Evento activo: **' + ap.name + '** em ' + (ap.venue||'—') + ' · ' + formatDate(ap.date) + '.' : 'Sem evento activo.';
-  } else {
-    reply = 'Modo demonstração. Liga a API Anthropic para respostas completas.';
-  }
-  cpAddMsg('ai', reply);
-  cpMsgs.push({role:'assistant', content:reply});
-}
-
-function cpToggleVAD() {
-  var btn = document.getElementById('cp-vtoggle');
-  if (cpVAD) {
-    cpStopVAD();
-    btn.textContent = '● ligar'; btn.classList.remove('on');
-  } else {
-    cpStartVAD();
-    btn.textContent = '◼ parar'; btn.classList.add('on');
-  }
-}
-
-function cpStartVAD() {
-  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream) {
-    cpStream = stream;
-    cpCtx = new (window.AudioContext || window.webkitAudioContext)();
-    var src = cpCtx.createMediaStreamSource(stream);
-    cpAna = cpCtx.createAnalyser();
-    cpAna.fftSize = 256; cpAna.smoothingTimeConstant = 0.6;
-    src.connect(cpAna);
-    cpVAD = true;
-    cpSetState('listening');
-    cpLoop();
-  }).catch(function(){ document.getElementById('cp-vlabel').textContent = 'sem permissão'; });
-}
-
-function cpStopVAD() {
-  cpVAD = false;
-  if (cpFrame) cancelAnimationFrame(cpFrame);
-  if (cpTimer) clearTimeout(cpTimer);
-  if (cpRec && cpSpeaking) cpRec.stop();
-  if (cpStream) cpStream.getTracks().forEach(function(t){t.stop();});
-  if (cpCtx) cpCtx.close();
-  cpSpeaking = false; cpSetState('off');
-}
-
-function cpLoop() {
-  if (!cpVAD) return;
-  var data = new Uint8Array(cpAna.fftSize);
-  cpAna.getByteTimeDomainData(data);
-  var sum = 0;
-  for (var i=0;i<data.length;i++){var v=data[i]-128;sum+=v*v;}
-  var rms = Math.sqrt(sum/data.length);
-  cpDrawBars(data, rms);
-  if (rms > CP_THRESH) {
-    if (!cpSpeaking) cpStartCap();
-    if (cpTimer){clearTimeout(cpTimer);cpTimer=null;}
-  } else if (cpSpeaking && !cpTimer) {
-    cpTimer = setTimeout(function(){if(cpSpeaking)cpEndCap();}, CP_SIL);
-  }
-  cpFrame = requestAnimationFrame(cpLoop);
-}
-
-function cpStartCap() {
-  cpSpeaking=true; cpChunks=[];
-  cpSetState('speaking');
-  var opts = MediaRecorder.isTypeSupported('audio/webm') ? {mimeType:'audio/webm'} : {};
-  cpRec = new MediaRecorder(cpStream, opts);
-  cpRec.ondataavailable = function(e){if(e.data.size>0)cpChunks.push(e.data);};
-  cpRec.onstop = cpOnEnd;
-  cpRec.start();
-}
-
-function cpEndCap() {
-  cpSpeaking=false; cpTimer=null;
-  if (cpRec && cpRec.state!=='inactive') cpRec.stop();
-  cpSetState('processing');
-}
-
-function cpOnEnd() {
-  if (cpChunks.length===0){cpSetState('listening');return;}
-  var blob = new Blob(cpChunks,{type:'audio/webm'});
-  if (blob.size < 3000){cpSetState('listening');return;}
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR){cpSetState('listening');return;}
-  var rec = new SR();
-  rec.lang='pt-PT'; rec.interimResults=false; rec.maxAlternatives=1;
-  rec.onresult = function(e){
-    var t = e.results[0][0].transcript.trim();
-    if (t) cpSend(t); else cpSetState('listening');
-  };
-  rec.onerror = function(){cpSetState('listening');};
-  rec.onend = function(){if(cpVAD&&!cpSpeaking)cpSetState('listening');};
-  rec.start();
-}
-
-function cpSetState(s) {
-  var dot = document.getElementById('cp-vdot');
-  var lbl = document.getElementById('cp-vlabel');
-  dot.className = 'cp-vdot ' + s;
-  var labels = {listening:'a ouvir...', speaking:'a capturar', processing:'a analisar...', off:'pausado'};
-  lbl.textContent = labels[s] || 'pausado';
-}
-
-function cpDrawBars(data, rms) {
-  var bars = document.querySelectorAll('.cp-vbar');
-  var active = rms > CP_THRESH;
-  var step = Math.floor(data.length / bars.length);
-  bars.forEach(function(bar, i) {
-    var val = Math.abs(data[i*step]-128);
-    var h = active ? Math.max(2,Math.min(18,val*1.4)) : Math.max(2,Math.min(5,val*0.3));
-    bar.style.height = h + 'px';
-    bar.classList.toggle('active', active);
-  });
-}
-
-function cpSpeak(text) {
-  if (!window.speechSynthesis) return;
-  var clean = text.replace(/[*]{2}/g,'').replace(/[\n]/g,'. ').substring(0,250);
-  var u = new SpeechSynthesisUtterance(clean);
-  u.lang='pt-PT'; u.rate=1.05;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
-}
-
-var cpThinkEl = null;
-function cpShowThink() {
-  var msgs = document.getElementById('cp-msgs');
-  cpThinkEl = document.createElement('div');
-  cpThinkEl.className = 'cp-msg ai';
-  cpThinkEl.innerHTML = '<div class="cp-thinking"><div class="cp-dot"></div><div class="cp-dot"></div><div class="cp-dot"></div></div>';
-  msgs.appendChild(cpThinkEl);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-function cpHideThink(){if(cpThinkEl){cpThinkEl.remove();cpThinkEl=null;}}
-
-function cpAddMsg(role, text) {
-  var msgs = document.getElementById('cp-msgs');
-  var div = document.createElement('div');
-  div.className = 'cp-msg ' + role;
-  var fmt = text.replace(/[*]{2}(.+?)[*]{2}/g,'<strong>$1</strong>');
-  fmt = fmt.split('\n').join('<br>');
-  div.innerHTML = '<div class="cp-bbl">' + fmt + '</div>';
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-
-// ── EQUIPA TÉCNICA ────────────────────────────────────────────────────────────
-(function() {
-// Namespace all equipa functions
-
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const AREAS = ['som','luz','video','automatismos','estruturas','logistica','producao','criativo','seguranca'];
 const AREA_LABELS = { som:'Som', luz:'Luz', video:'Vídeo', automatismos:'Automatismos', estruturas:'Estruturas', logistica:'Logística', producao:'Produção', criativo:'Criativo', seguranca:'Segurança' };
@@ -2792,8 +2587,8 @@ function openModal(id) {
   document.getElementById('eq-modal-overlay').classList.add('show');
 }
 
-function closeModal() { document.getElementById('eq-modal-overlay').classList.remove('show'); }
-function maybeClose(e) { if (e.target === document.getElementById('eq-modal-overlay')) closeModal(); }
+function closeModalEq() { document.document.getElementById('eq-modal-overlay') && document.getElementById('eq-modal-overlay').classList.remove('show'); }
+function maybeCloseEq(e) { if (e.target === document.getElementById('eq-modal-overlay')) closeModal(); }
 
 function updateModalHeader() {
   const name = document.getElementById('f-name').value || 'Novo Técnico';
@@ -3015,8 +2810,7 @@ function exportToCopilot() {
 
   const ctx = { teamProfiles: teamProfile };
   const encoded = btoa(encodeURIComponent(JSON.stringify(ctx)));
-  window.open(`index.html?team=${encoded}`, '_blank');
-  notify('A lançar co-piloto com perfis da equipa...');
+    notify('A lançar co-piloto com perfis da equipa...');
 }
 
 // ── NOTIFY ────────────────────────────────────────────────────────────────────
@@ -3294,25 +3088,23 @@ function loadDemoData() {
   save();
 }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-// Remove old demo data if it was the default seeded data (let CB take over)
-if (tecnicos.length > 0 && tecnicos.every(t => t.fromDemo) && getCBConfig().auth) {
-  tecnicos = [];
-  save();
-}
-// If no local data and no CB config, load demo
-if (tecnicos.length === 0 && !getCBConfig().auth) {
-  loadDemoData();
-}
-if(document.getElementById('stats-bar-eq'))renderEquipaStats();
-if(document.getElementById('tecnico-grid'))renderGrid();
-// Auto-sync on load
-// Auto-sync only when equipa view is active (elements exist)
-const cbCfg = getCBConfig();
-if (cbCfg.url && cbCfg.auth && document.getElementById('cb-dot')) {
-  syncNow();
-} else if (document.getElementById('cb-dot')) {
-  setCBStatus('off', 'CrewBrain — configurar ⚙');
+// ── EQUIPA INIT ─────────────────────────────────────────────────────────────
+function initEquipa() {
+  if (tecnicos.length > 0 && tecnicos.every(function(t){ return t.fromDemo; }) && getCBConfig().auth) {
+    tecnicos = [];
+    save();
+  }
+  if (tecnicos.length === 0 && !getCBConfig().auth) {
+    loadDemoData();
+  }
+  renderEquipaStats();
+  renderGrid();
+  var cbCfg = getCBConfig();
+  if (cbCfg.url && cbCfg.auth && document.getElementById('cb-dot')) {
+    syncNow();
+  } else if (document.getElementById('cb-dot')) {
+    setCBStatus('off', 'CrewBrain — configurar ⚙');
+  }
 }
 
 
@@ -3388,42 +3180,7 @@ function renderEquipaStats() {
   `;
 }
 
-window.renderEquipa = renderEquipa;
-window.renderEquipaStats = renderEquipaStats;
-window.syncNow = syncNow;
-window.syncTeamFromCB = syncTeamFromCB;
-window.addTecnicoToProject = addTecnicoToProject;
-window.removeTecnicoFromProject = removeTecnicoFromProject;
-window.editVan = editVan;
-window.renderProjectTeamHTML = renderProjectTeamHTML;
-window.showCBConfig = showCBConfig;
-window.hideCBConfig = hideCBConfig;
-window.saveCBConfig = saveCBConfig;
-window.openModal = openModal;
-window.closeModalEq = closeModal; // equipa modal - don't override main closeModal
-window.maybeCloseEq = maybeClose;
-window.setFilter = setFilter;
-window.renderGrid = renderGrid;
-window.setStar = setStar;
-window.toggleEquip = toggleEquip;
-window.addCert = addCert;
-window.removeCert = removeCert;
-window.saveTecnico = saveTecnico;
-window.deleteTecnico = deleteTecnico;
-window.updateSkillVal = updateSkillVal;
-window.updateModalHeader = updateModalHeader;
-window.addCustomCategory = addCustomCategory;
-window.removeCustomCategory = removeCustomCategory;
-window.addCustomEquip = addCustomEquip;
-window.toggleCatManager = toggleCatManager;
-window.setStarInline = setStarInline;
-window.updateCardField = updateCardField;
-window.toggleCardSkills = toggleCardSkills;
-window.updateCardSkill = updateCardSkill;
-window.saveCardSkills = saveCardSkills;
-window.cancelCardSkills = cancelCardSkills;
-window.exportToCopilot = exportToCopilot;
-})();
+
 </script>
 
 </body>
