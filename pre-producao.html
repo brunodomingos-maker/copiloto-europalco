@@ -3143,7 +3143,7 @@ async function syncNow() {
   if (syncBtn) syncBtn.textContent = '↻ ...';
 
   try {
-    const gasUrl = proxyUrl + '?path=' + encodeURIComponent('/staff?limit=200');
+    const gasUrl = proxyUrl + '?path=' + encodeURIComponent('/staff?limit=500&fields=ID,Firstname,Lastname,FullName,Phone,EMail,Type,Status,Avatar,Function');
     const res = await fetch(gasUrl);
     if (!res.ok) throw new Error('Proxy error ' + res.status);
     const proxyData = await res.json();
@@ -3163,7 +3163,10 @@ async function syncNow() {
     if (syncBtn) syncBtn.textContent = '↻ Sync';
     if (document.getElementById('stats-bar-eq')) renderEquipaStats();
     if (document.getElementById('tecnico-grid')) renderGrid();
-    notify('✓ ' + staff.length + ' técnicos importados do CrewBrain');
+    // Clean up any 'Sem nome' entries
+tecnicos = tecnicos.filter(t => t.name && t.name !== 'Sem nome');
+save();
+notify('✓ ' + staff.length + ' técnicos importados do CrewBrain');
 
   } catch(e) {
     if (tecnicos.length === 0 || tecnicos.every(function(t){ return t.fromDemo; })) loadDemoData();
@@ -3177,14 +3180,25 @@ async function syncNow() {
 
 
 function parseStaff(items) {
-  return items.map(item => ({
-    cbId: item.id || item.resourceId || item.contactId || null,
-    name: (item.name || item.fullName || ((item.firstName || '') + ' ' + (item.lastName || '')).trim() || 'Sem nome').trim(),
-    role: item.role || item.function || item.jobTitle || item.position || item.department || '',
-    phone: item.phone || item.mobile || item.telephone || '',
-    email: item.email || '',
-    cb: normalizeStatus(item.status || item.confirmationStatus || item.bookingStatus || ''),
-  }));
+  return items.map(item => {
+    // CrewBrain v2 exact field names from API
+    const first = item.Firstname || item.firstName || '';
+    const last  = item.Lastname  || item.lastName  || '';
+    const fullName = (item.FullName || (first + ' ' + last)).trim();
+    // Only import EMPLOYEE and FREELANCER types, skip ADMIN/system users
+    const type = item.Type || '';
+    const status = item.Status || '';
+    return {
+      cbId: item.ID || item.id || null,
+      name: fullName || '',
+      role: item.Function || item.JobTitle || item.role || '',
+      phone: item.Phone || item.Mobile || '',
+      email: item.EMail || item.Email || item.email || '',
+      cb: (status === 'EMPLOYEE' || status === 'FREELANCER') ? 'confirmed' : 'pending',
+      avatar: item.Avatar || '',
+      type: type,
+    };
+  }).filter(s => s.name && s.name.trim().length > 1);
 }
 
 function normalizeStatus(s) {
@@ -3205,6 +3219,7 @@ function mergeWithLocalProfiles(cbStaff) {
     let existing = tecnicos.find(t => t.cbId && t.cbId === cbPerson.cbId);
     if (!existing) existing = tecnicos.find(t => t.name.toLowerCase() === cbPerson.name.toLowerCase());
 
+    if (!cbPerson.name || cbPerson.name === 'Sem nome') return; // skip empty
     if (existing) {
       // Update CB-sourced fields only, preserve local evaluations
       existing.cbId = cbPerson.cbId;
@@ -3212,6 +3227,7 @@ function mergeWithLocalProfiles(cbStaff) {
       if (!existing.role && cbPerson.role) existing.role = cbPerson.role;
       if (!existing.phone && cbPerson.phone) existing.phone = cbPerson.phone;
       if (!existing.email && cbPerson.email) existing.email = cbPerson.email;
+      if (cbPerson.avatar) existing.avatar = cbPerson.avatar;
       updated.add(existing.id);
     } else {
       // New person from CrewBrain — create profile with empty evaluations
