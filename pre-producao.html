@@ -3143,7 +3143,7 @@ async function syncNow() {
   if (syncBtn) syncBtn.textContent = '↻ ...';
 
   try {
-    const gasUrl = proxyUrl + '?path=' + encodeURIComponent('/staff?limit=500&fields=ID,Firstname,Lastname,FullName,Phone,EMail,Type,Status,Avatar,Function');
+    const gasUrl = proxyUrl + '?paginate=true&path=' + encodeURIComponent('/staff?fields=ID,Firstname,Lastname,FullName,Phone,EMail,Type,Status,Avatar,Function');
     const res = await fetch(gasUrl);
     if (!res.ok) throw new Error('Proxy error ' + res.status);
     const proxyData = await res.json();
@@ -3151,7 +3151,7 @@ async function syncNow() {
     if (proxyData.status && proxyData.status !== 200) throw new Error('CrewBrain ' + proxyData.status);
     const cbData = proxyData.data;
     if (!cbData) throw new Error('Sem dados do CrewBrain');
-    const rawStaff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.staff || []);
+    const rawStaff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.staff || cbData.resources || []);
     const staff = parseStaff(rawStaff);
     if (staff.length === 0) throw new Error('Nenhum técnico encontrado');
 
