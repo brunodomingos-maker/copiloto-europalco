@@ -1713,7 +1713,7 @@ function renderProjectDetail(projectId) {
     <div style="margin-top:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="section-title" style="margin-bottom:0">Equipa destacada (${getProjectTeam(p.id).length})</div>
-        <button onclick="window.syncTeamFromCB && window.syncTeamFromCB(${p.id})" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
+        <button onclick="(async()=>{const f=window.syncTeamFromCB||syncTeamFromCB;if(f)await f(${p.id});else alert('Função não disponível')})()" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
       </div>
       <div class="proj-team-grid" id="proj-team-${p.id}">
         ${renderProjectTeamHTML(p.id)}
@@ -1893,7 +1893,7 @@ function editVan(projectId, idx, el) {
   inp.onkeydown = e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { inp.remove(); el.style.display = ''; } };
 }
 
-async function syncTeamFromCB(projectId) {
+window.syncTeamFromCB = async function syncTeamFromCB(projectId) {
   notify('A iniciar sync... projeto=' + projectId);
   const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
   console.log('proxyUrl:', proxyUrl);
@@ -1945,7 +1945,7 @@ async function syncTeamFromCB(projectId) {
   } catch(e) {
     notify('Erro CrewBrain: ' + e.message);
   }
-}
+};
 
 // ── OCORRÊNCIAS ──────────────────────────────────────────────────────────────
 function getOcorrencias() {
@@ -2309,7 +2309,6 @@ window.addEventListener('message', function(e) {
 });
 
 // ── EXPOSE GLOBALS ────────────────────────────────────────────────────────────
-window.syncTeamFromCB        = syncTeamFromCB;
 window.addTecnicoToProject   = addTecnicoToProject;
 window.removeTecnicoFromProject = removeTecnicoFromProject;
 window.editVan               = editVan;
