@@ -1713,7 +1713,7 @@ function renderProjectDetail(projectId) {
     <div style="margin-top:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="section-title" style="margin-bottom:0">Equipa destacada (${getProjectTeam(p.id).length})</div>
-        <button data-action="sync-team" data-project="${p.id}" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
+        <button id="btn-sync-team" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
       </div>
       <div class="proj-team-grid" id="proj-team-${p.id}">
         ${renderProjectTeamHTML(p.id)}
@@ -1736,27 +1736,9 @@ function renderProjectDetail(projectId) {
     });
     renderOccList(p.id);
 
-    // Attach button listeners via data-action (no inline onclick needed)
-    const container = document.getElementById('content');
-    if (container) {
-      container.addEventListener('click', function handler(e) {
-        const btn = e.target.closest('[data-action]');
-        if (!btn) return;
-        const action = btn.dataset.action;
-        const pid = btn.dataset.project ? Number(btn.dataset.project) : null;
-        const tid = btn.dataset.tecnico || null;
-        if (action === 'sync-team')      syncTeamFromCB(pid);
-        else if (action === 'edit-cb-id')   editProjectCBId(pid);
-        else if (action === 'delete-project') deleteProject(pid);
-        else if (action === 'add-tecnico')  addTecnicoToProject(pid);
-        else if (action === 'remove-tecnico') removeTecnicoFromProject(pid, tid);
-        else if (action === 'edit-van')     editVan(pid, tid);
-        else if (action === 'add-occ')      addOcorrencia(pid);
-        else if (action === 'toggle-occ')   toggleOcorrencia(Number(btn.dataset.occ));
-        else if (action === 'delete-occ')   deleteOcorrencia(Number(btn.dataset.occ));
-        // remove listener after navigation
-      });
-    }
+    // Direct button listeners
+    var btnSync = document.getElementById('btn-sync-team');
+    if (btnSync) btnSync.addEventListener('click', function() { syncTeamFromCB(p.id); });
   });
 }
 
