@@ -1628,9 +1628,9 @@ function renderProjectDetail(projectId) {
       <span class="badge ${statusClass[p.status]}" style="font-size:11px;padding:4px 12px">${statusLabels[p.status]}</span>
       <div style="display:flex;align-items:center;gap:6px">
         ${p.cbEventId ? `<span style="font-family:var(--mono);font-size:10px;background:rgba(26,92,168,0.1);color:var(--blue);border:1px solid rgba(26,92,168,0.2);border-radius:5px;padding:3px 8px">${p.cbEventId}</span>` : ''}
-        <button onclick="editProjectCBId(${p.id})" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer" title="Associar evento CrewBrain">⚙ CrewBrain</button>
+        <button data-action="edit-cb-id" data-project="${p.id}" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer" title="Associar evento CrewBrain">⚙ CrewBrain</button>
       </div>
-      <button onclick="deleteProject(${p.id})" style="padding:7px 14px;background:none;border:1px solid rgba(192,57,43,0.3);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--red);cursor:pointer">🗑 Eliminar</button>
+      <button data-action="delete-project" data-project="${p.id}" style="padding:7px 14px;background:none;border:1px solid rgba(192,57,43,0.3);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--red);cursor:pointer">🗑 Eliminar</button>
       <button onclick="showView('projects')" style="padding:7px 14px;background:none;border:1px solid var(--border);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--dim);cursor:pointer">← Projetos</button>
     </div>
 
@@ -1713,7 +1713,7 @@ function renderProjectDetail(projectId) {
     <div style="margin-top:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="section-title" style="margin-bottom:0">Equipa destacada (${getProjectTeam(p.id).length})</div>
-        <button onclick="syncTeamFromCB(${p.id})" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
+        <button data-action="sync-team" data-project="${p.id}" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
       </div>
       <div class="proj-team-grid" id="proj-team-${p.id}">
         ${renderProjectTeamHTML(p.id)}
@@ -1723,18 +1723,40 @@ function renderProjectDetail(projectId) {
           <option value="">+ Adicionar técnico manualmente...</option>
           ${getTecnicosNotInProject(p.id).map(t => '<option value="' + t.id + '">' + t.name + ' — ' + (t.role||'—') + '</option>').join('')}
         </select>
-        <button class="team-add-btn" onclick="addTecnicoToProject(${p.id})">Adicionar</button>
+        <button class="team-add-btn" data-action="add-tecnico" data-project="${p.id}">Adicionar</button>
       </div>
     </div>
   `;
 
-  // Auto-resize textareas
+  // Event delegation — all project detail button actions
   requestAnimationFrame(() => {
     document.querySelectorAll('.pending-detail-input').forEach(ta => {
       ta.style.height = 'auto';
       ta.style.height = ta.scrollHeight + 'px';
     });
     renderOccList(p.id);
+
+    // Attach button listeners via data-action (no inline onclick needed)
+    const container = document.getElementById('content');
+    if (container) {
+      container.addEventListener('click', function handler(e) {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const pid = btn.dataset.project ? Number(btn.dataset.project) : null;
+        const tid = btn.dataset.tecnico || null;
+        if (action === 'sync-team')      syncTeamFromCB(pid);
+        else if (action === 'edit-cb-id')   editProjectCBId(pid);
+        else if (action === 'delete-project') deleteProject(pid);
+        else if (action === 'add-tecnico')  addTecnicoToProject(pid);
+        else if (action === 'remove-tecnico') removeTecnicoFromProject(pid, tid);
+        else if (action === 'edit-van')     editVan(pid, tid);
+        else if (action === 'add-occ')      addOcorrencia(pid);
+        else if (action === 'toggle-occ')   toggleOcorrencia(Number(btn.dataset.occ));
+        else if (action === 'delete-occ')   deleteOcorrencia(Number(btn.dataset.occ));
+        // remove listener after navigation
+      });
+    }
   });
 }
 
@@ -1894,46 +1916,44 @@ function editVan(projectId, idx, el) {
 }
 
 window.syncTeamFromCB = async function syncTeamFromCB(projectId) {
-  notify('A iniciar sync... projeto=' + projectId);
+  console.log('syncTeamFromCB called with projectId:', projectId);
   const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
   console.log('proxyUrl:', proxyUrl);
   if (!proxyUrl) { notify('Proxy GAS não configurado — vai a Google Sheets'); return; }
   notify('A sincronizar equipa do CrewBrain...');
   try {
     const proj = state.projects.find(function(x){ return x.id === projectId; });
-    const rawId = (proj && proj.cbEventId) ? proj.cbEventId : '';
+    const rawId = (proj && proj.cbEventId) ? proj.cbEventId.trim() : '';
     if (!rawId) { notify('Associa primeiro o ID CrewBrain ao projeto (botão ⚙ CrewBrain)'); return; }
-    const numId = rawId.replace(/[^0-9]/g, '');
-    let eventId = numId;
-    if (rawId.toUpperCase().startsWith('P')) {
-      try {
-        notify('A procurar eventos de P' + numId + '...');
-        const evRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/events?projectId=' + numId + '&limit=10'));
-        if (evRes.ok) {
-          const evData = await evRes.json();
-          const events = (evData.data && evData.data.data) || [];
-          if (events.length > 0) {
-            eventId = String(events[0].ID || events[0].id || numId);
-            notify('Evento C' + eventId + ' encontrado. A carregar equipa...');
-          }
-        }
-      } catch(e2) {}
-    }
-    const gasUrl = proxyUrl + '?path=' + encodeURIComponent('/events/' + eventId + '/resources/allNamesInEvent');
-    const res = await fetch(gasUrl);
-    if (!res.ok) throw new Error('Proxy error ' + res.status);
-    const proxyData = await res.json();
-    if (proxyData.error) throw new Error(proxyData.error);
-    const cbData = proxyData.data;
-    if (!cbData) throw new Error('Sem dados');
-    const staff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.resources || []);
+
+    // Step 1: Search for event by EventIDManual (e.g. C260780 or P260449)
+    notify('A procurar evento ' + rawId + ' no CrewBrain...');
+    const searchRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/events?search=' + rawId + '&limit=5'));
+    if (!searchRes.ok) throw new Error('Proxy error ' + searchRes.status);
+    const searchData = await searchRes.json();
+    const events = (searchData.data && searchData.data.data) || [];
+    if (events.length === 0) { notify('Evento ' + rawId + ' não encontrado no CrewBrain'); return; }
+
+    // Find best match — prefer exact EventIDManual match
+    let event = events.find(function(e){ return e.EventIDManual === rawId; }) || events[0];
+    const eventId = event.EventID;
+    notify('Evento encontrado: ' + event.Title + ' (ID: ' + eventId + '). A carregar equipa...');
+
+    // Step 2: Get resources for this event
+    const resUrl = proxyUrl + '?path=' + encodeURIComponent('/events/' + eventId + '/resources/allNamesInEvent');
+    const resRes = await fetch(resUrl);
+    if (!resRes.ok) throw new Error('Proxy error ' + resRes.status);
+    const resData = await resRes.json();
+    const staff = (resData.data && resData.data.data) || [];
+
+    // Step 3: Merge into project team
     const team = getProjectTeam(projectId);
     const existing = new Set(team.map(function(m){ return m.name.toLowerCase(); }));
     let added = 0;
     staff.forEach(function(item) {
-      const name = (item.FullName || ((item.Firstname||'') + ' ' + (item.Lastname||'')).trim() || '').trim();
+      const name = (item.Name || item.FullName || '').trim();
       if (name && !existing.has(name.toLowerCase())) {
-        team.push({ tecnicoId: item.ID || null, name: name, role: item.Function || '', phone: item.Phone || '', van: '' });
+        team.push({ tecnicoId: item.AssignmentID || null, name: name, role: '', phone: item.FreeEmployeePhone || '', van: '' });
         existing.add(name.toLowerCase());
         added++;
       }
@@ -1941,9 +1961,10 @@ window.syncTeamFromCB = async function syncTeamFromCB(projectId) {
     saveProjectTeam(projectId, team);
     var el = document.getElementById('proj-team-' + projectId);
     if (el) el.innerHTML = renderProjectTeamHTML(projectId);
-    notify('✓ ' + added + ' técnico' + (added !== 1 ? 's' : '') + ' importado' + (added !== 1 ? 's' : '') + ' do CrewBrain');
+    notify('✓ ' + added + ' técnico' + (added !== 1 ? 's' : '') + ' importado' + (added !== 1 ? 's' : '') + ' (' + staff.length + ' no evento)');
   } catch(e) {
-    notify('Erro CrewBrain: ' + e.message);
+    console.error('syncTeamFromCB error:', e);
+    notify('Erro: ' + e.message);
   }
 };
 
