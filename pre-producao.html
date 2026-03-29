@@ -1363,7 +1363,7 @@ function savePendingEdit(id) {
 function deleteTarefa(id) {
   if (!confirm('Eliminar esta tarefa?')) return;
   state.tarefas = state.tarefas.filter(x => x.id !== id);
-  savePendentes();
+  saveTarefas();
   showView(state.currentView, state.currentProject);
   notify('Tarefa eliminada');
 }
@@ -1697,7 +1697,7 @@ function deleteProject(projectId) {
   state.projects = state.projects.filter(x => x.id !== projectId);
   state.tarefas = state.tarefas.filter(x => x.projectId !== projectId);
   state.timeline = state.timeline.filter(x => x.projectId !== projectId);
-  saveProjects(); savePendentes(); saveTimeline();
+  saveProjects(); saveTarefas(); saveTimeline();
   localStorage.removeItem('ep-proj-team-' + projectId);
   showView('projects');
   notify('Projeto eliminado');
