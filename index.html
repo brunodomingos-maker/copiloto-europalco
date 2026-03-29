@@ -185,82 +185,16 @@
 <body>
 
 <!-- ══ SETUP ═══════════════════════════════════════════════════════════════════ -->
-<div class="screen" id="screen-setup">
-  <div class="header">
-    <img src="data:image/webp;base64,UklGRvoCAABXRUJQVlA4WAoAAAAYAAAAAwEATwAAQUxQSF4AAAABR6AQABA01z9APBEVEQEvc+a7YBVJVqP9RBoKkICOHJznDHcV0X+jbds4dBrdbkDZQrFQtj8rBLHkAOjngOoQ5ZGYH8FN3gUjGBnBos/xX5KU6W1RUuJFMoKb/GMFVlA4IPABAABwEgCdASoEAVAAPnU4mEikoyKhJtVY8JAOiWVu7mFQALQ7jPYOgK5P/Jc5P4c/133AfQDPO+YDzqv4B/gPYB6AH9V/gHWQegB/AP7B6WX7R/Eb+on7AewABIcTphsqqBu1i4Tifayj0RWk+p3MHk7ioJGAfj7UgArs+X+qhi0cn5IXXzMdCdVRtK5OtVz+Smy+jxbvzDpIkkgflgAA/vuc1T4rn//iAI/+x/5GBo/+j/yMDR8xkzywmI3uywzji4fou7Xr/ttsgaoX/622QNUL+RYuH7Cxer9vWAmjL/DA9ikC7rkydTe7+lul/VLPVM1j/afi3pozL0THQHOEueOZXQblKTc2976SwjQvCD0206Nir45CHz9E2oxxo3srCB2vM+R/gzu59w21R5pFlea+yuU5T3oqQAT/udMPLmOkf68+uT7YWrKJQ6d/HbQzxYL+lYgZzYcJYNYxIygeCrc8+MxXvPvkFAT1/o9KSXxKVusyqsvxo3srB+NeZ8j/Bndz7gI2Ca/AHuKoQQ2OydvQD6dCkua5Jt119vyK3f4y+hvE+wZVLdeZZdWsLVv2p7uplvef37kFA17Nui1CyXJVZLDlq03zMD9eTzIDJQMPYZfjT6TfBELTofGIpGcSjN08DAQDnKhBut6h3V9gAAAARVhJRn4AAABFeGlmAABJSSoACAAAAAUAEgEDAAEAAAABAAAAGgEFAAEAAABKAAAAGwEFAAEAAABSAAAAKAEDAAEAAAACAAAAaYcEAAEAAABaAAAAAAAAAEgAAAABAAAASAAAAAEAAAACAAKgBAABAAAABAEAAAOgBAABAAAAUAAAAAAAAAA=" alt="Europalco" style="height:22px;width:auto;display:block">
-    <div class="event-name">Co-piloto de evento</div>
+<div class="screen" id="screen-setup" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;box-sizing:border-box">
+  <img src="data:image/webp;base64,UklGRvoCAABXRUJQVlA4WAoAAAAYAAAAAwEATwAAQUxQSF4AAAABR6AQABA01z9APBEVEQEvc+a7YBVJVqP9RBoKkICOHJznDHcV0X+jbds4dBrdbkDZQrFQtj8rBLHkAOjngOoQ5ZGYH8FN3gUjGBnBos/xX5KU6W1RUuJFMoKb/GMFVlA4IPABAABwEgCdASoEAVAAPnU4mEikoyKhJtVY8JAOiWVu7mFQALQ7jPYOgK5P/Jc5P4c/133AfQDPO+YDzqv4B/gPYB6AH9V/gHWQegB/AP7B6WX7R/Eb+on7AewABIcTphsqqBu1i4Tifayj0RWk+p3MHk7ioJGAfj7UgArs+X+qhi0cn5IXXzMdCdVRtK5OtVz+Smy+jxbvzDpIkkgflgAA/vuc1T4rn//iAI/+x/5GBo/+j/yMDR8xkzywmI3uywzji4fou7Xr/ttsgaoX/622QNUL+RYuH7Cxer9vWAmjL/DA9ikC7rkydTe7+lul/VLPVM1j/afi3pozL0THQHOEueOZXQblKTc2976SwjQvCD0206Nir45CHz9E2oxxo3srCB2vM+R/gzu59w21R5pFlea+yuU5T3oqQAT/udMPLmOkf68+uT7YWrKJQ6d/HbQzxYL+lYgZzYcJYNYxIygeCrc8+MxXvPvkFAT1/o9KSXxKVusyqsvxo3srB+NeZ8j/Bndz7gI2Ca/AHuKoQQ2OydvQD6dCkua5Jt119vyK3f4y+hvE+wZVLdeZZdWsLVv2p7uplvef37kFA17Nui1CyXJVZLDlq03zMD9eTzIDJQMPYZfjT6TfBELTofGIpGcSjN08DAQDnKhBut6h3V9gAAAARVhJRn4AAABFeGlmAABJSSoACAAAAAUAEgEDAAEAAAABAAAAGgEFAAEAAABKAAAAGwEFAAEAAABSAAAAKAEDAAEAAAACAAAAaYcEAAEAAABaAAAAAAAAAEgAAAABAAAASAAAAAEAAAACAAKgBAABAAAABAEAAAOgBAABAAAAUAAAAAAAAAA=" style="height:40px;width:auto;margin-bottom:32px;opacity:0.9" alt="Europalco">
+  <div style="width:100%;max-width:320px">
+    <input class="field-input" id="ev-id-input" type="text" placeholder="ID do evento (ex: C260780)"
+      style="text-align:center;font-size:16px;letter-spacing:0.05em;margin-bottom:12px"
+      onkeydown="if(event.key==='Enter')startEvent()">
+    <div id="ev-load-status" style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.35);text-align:center;min-height:16px;margin-bottom:16px"></div>
+    <button class="btn-primary" onclick="startEvent()" style="font-size:15px;letter-spacing:0.06em">Iniciar</button>
   </div>
-  <div class="setup-scroll">
-    <div class="setup-title">Configurar evento</div>
-    <div class="setup-sub">Preenche o contexto manualmente ou sincroniza com o CrewBrain.</div>
-
-    <!-- CrewBrain section -->
-    <div class="section-divider">CrewBrain</div>
-    <div class="field-group">
-      <label class="field-label">URL base da API</label>
-      <input class="field-input" id="cb-url" type="text" placeholder="https://app.crewbrain.net/api" value="https://app.crewbrain.net/api">
-    </div>
-    <div class="field-group">
-      <label class="field-label">Credenciais (Basic Auth — user:password)</label>
-      <input class="field-input" id="cb-auth" type="password" placeholder="utilizador:password">
-    </div>
-    <div class="field-group">
-      <label class="field-label">Event ID do CrewBrain</label>
-      <input class="field-input" id="cb-eventid" type="text" placeholder="ex: 12345">
-    </div>
-    <div class="crewbrain-status" id="cb-status">
-      <span id="cb-status-dot" style="width:7px;height:7px;border-radius:50%;background:var(--text-dim);flex-shrink:0;display:inline-block"></span>
-      <span id="cb-status-text">Não sincronizado</span>
-    </div>
-    <button class="btn-secondary" onclick="syncCrewBrain()">↻ Sincronizar com CrewBrain</button>
-
-    <!-- Event info section -->
-    <div class="section-divider">Evento</div>
-    <div class="field-group">
-      <label class="field-label">Nome do evento</label>
-      <input class="field-input" id="ev-name" type="text" placeholder="ex: DHL Supply Chain — Vilamoura" value="DHL Supply Chain — Vilamoura">
-    </div>
-    <div class="field-group">
-      <label class="field-label">Local / venue</label>
-      <input class="field-input" id="ev-venue" type="text" placeholder="ex: Centro de Congressos, Tivoli Marina" value="Centro de Congressos, Hotel Tivoli Marina Vilamoura">
-    </div>
-    <div class="field-group">
-      <label class="field-label">Data</label>
-      <input class="field-input" id="ev-date" type="text" placeholder="ex: 11 de Abril de 2026" value="11 de Abril de 2026">
-    </div>
-    <div class="field-group">
-      <label class="field-label">Timeline do dia (hora — descrição)</label>
-      <textarea class="field-input" id="ev-timeline">07:00 — Chegada de equipa e briefing de segurança
-08:00 — Descarga de camiões
-09:00 — Pré rigg e rigg (DP Riggers)
-13:00 — Montagem de ledwall e jumbotrone
-15:00 — Cablagem geral AV
-17:00 — Tech rehearsal / soundcheck
-19:00 — Abertura de portas ao público
-20:00 — Início do programa
-23:00 — Fim do evento
-23:30 — Início de desmontagem</textarea>
-    </div>
-    <div class="field-group">
-      <label class="field-label">Equipa manual (se não usar CrewBrain)</label>
-      <textarea class="field-input" id="ev-team" placeholder="Nome — Função — Contacto">Bruno Domingos — GP — 961 026 466
-Filipa Limão — TSST / Segurança — 961 026 280
-Luís Pinto — Responsável Estruturas
-DP Riggers — Rigging externo</textarea>
-    </div>
-    <div class="field-group">
-      <label class="field-label">Protocolos / notas</label>
-      <textarea class="field-input" id="ev-protocols">Em caso de incêndio: avisar GP via rádio, acionar protocolo hotel, usar extintor mais próximo, ponto de encontro exterior.
-Em caso de acidente grave: não mover vítima, contactar Filipa Limão (961 026 280) ou ligar 112.
-EPI obrigatórios: capacete, luvas, colete visibilidade, calçado S3.
-Comunicações via rádio UHF em todas as frentes de trabalho.
-Proibido circular sob cargas suspensas.</textarea>
-    </div>
-
-    <div class="notice">⚡ A IA usa o contexto do CrewBrain (equipa, transportes, confirmações) para responder com precisão durante o evento.</div>
-    <button class="btn-primary" onclick="startEvent()">Iniciar co-piloto</button>
-    <div style="height:28px"></div>
-  </div>
+  <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.2);margin-top:32px;letter-spacing:0.08em">EUROPALCO · GESTÃO DE PROJETOS</div>
 </div>
 
 <!-- ══ MAIN ════════════════════════════════════════════════════════════════════ -->
@@ -397,6 +331,75 @@ function getCBBase() {
 
 function getCBEventId() {
   return document.getElementById('cb-eventid').value.trim();
+}
+
+function loadProjectsFromStorage() {
+  try {
+    const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
+    const sel = document.getElementById('proj-select');
+    if (!sel) return;
+    if (projs.length === 0) {
+      sel.innerHTML = '<option value="">— Sem projetos na plataforma</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">— Seleccionar projeto...</option>' +
+      projs.map(function(p) {
+        return '<option value="' + p.id + '">' + p.name + (p.client ? ' · ' + p.client : '') + '</option>';
+      }).join('');
+  } catch(e) { console.log('loadProjects error', e); }
+}
+
+function onProjSelect(projId) {
+  if (!projId) {
+    document.getElementById('proj-preview').style.display = 'none';
+    window._loadedProject = null;
+    return;
+  }
+  try {
+    const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
+    const tl = JSON.parse(localStorage.getItem('ep-timeline') || '[]');
+    const team = JSON.parse(localStorage.getItem('ep-proj-team-' + projId) || '[]');
+    const p = projs.find(function(x){ return String(x.id) === String(projId); });
+    if (!p) return;
+
+    // Build timeline string
+    const projTl = tl.filter(function(t){ return String(t.projectId) === String(projId); })
+      .sort(function(a,b){ return (a.time||'') > (b.time||'') ? 1 : -1; })
+      .map(function(t){ return t.time + ' — ' + t.desc; }).join('\n');
+
+    // Build team string
+    const teamStr = team.map(function(m){
+      return m.name + (m.role ? ' — ' + m.role : '') + (m.phone ? ' — ' + m.phone : '') + (m.van ? ' [' + m.van + ']' : '');
+    }).join('\n');
+
+    window._loadedProject = {
+      id: p.id, name: p.name, venue: p.venue || '', date: p.date || '',
+      timeline: projTl, team: teamStr, protocols: p.protocols || ''
+    };
+
+    // Fill manual fields too
+    const nameEl = document.getElementById('ev-name');
+    const venueEl = document.getElementById('ev-venue');
+    const dateEl = document.getElementById('ev-date');
+    if (nameEl) nameEl.value = p.name;
+    if (venueEl) venueEl.value = p.venue || '';
+    if (dateEl) dateEl.value = p.date || '';
+
+    // Show preview
+    const preview = document.getElementById('proj-preview');
+    if (preview) {
+      preview.style.display = 'block';
+      preview.innerHTML =
+        '<strong style="color:rgba(255,255,255,0.8)">' + p.name + '</strong><br>' +
+        (p.venue ? '📍 ' + p.venue + '<br>' : '') +
+        (p.date ? '📅 ' + p.date + '<br>' : '') +
+        (projTl ? '⏱ ' + projTl.split('\n').length + ' momentos na timeline<br>' : '') +
+        (team.length ? '👥 ' + team.length + ' técnicos destacados' : '');
+    }
+
+    // Store CB event ID if exists
+    if (p.cbEventId) localStorage.setItem('ep-cb-eventid', p.cbEventId);
+  } catch(e) { console.log('onProjSelect error', e); }
 }
 
 async function syncCrewBrain() {
@@ -614,32 +617,100 @@ function renderCrewTab() {
 
 // ── SETUP → START ─────────────────────────────────────────────────────────────
 function startEvent() {
+  const evId = (document.getElementById('ev-id-input').value || '').trim().replace(/[^0-9]/g, '');
+  if (!evId) { setLoadStatus('Introduz o ID do evento'); return; }
+
+  setLoadStatus('A carregar...');
+
+  const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
+  if (!proxyUrl) {
+    // No proxy — try localStorage from pre-producao
+    loadFromLocalStorage(evId);
+    return;
+  }
+
+  // Load from CrewBrain via proxy
+  Promise.all([
+    fetch(proxyUrl + '?path=' + encodeURIComponent('/events/' + evId + '/resources/allNamesInEvent')).then(function(r){ return r.json(); }).catch(function(){ return null; }),
+    fetch(proxyUrl + '?path=' + encodeURIComponent('/events/' + evId + '/headInfo')).then(function(r){ return r.json(); }).catch(function(){ return null; })
+  ]).then(function(results) {
+    const staffData = results[0];
+    const headData = results[1];
+
+    // Parse head info
+    const head = headData && headData.data ? headData.data : {};
+    const staffList = staffData && staffData.data ? (staffData.data.data || staffData.data || []) : [];
+
+    const teamStr = staffList.map(function(s) {
+      const name = s.FullName || s.fullName || ((s.Firstname||'') + ' ' + (s.Lastname||'')).trim();
+      const role = s.Function || s.role || '';
+      const phone = s.Phone || s.phone || '';
+      return name + (role ? ' — ' + role : '') + (phone ? ' — ' + phone : '');
+    }).join('\n');
+
+    // Try to get timeline from localStorage
+    const allTl = JSON.parse(localStorage.getItem('ep-timeline') || '[]');
+    const projId = localStorage.getItem('ep-cb-eventid');
+    const tl = allTl.filter(function(t){ return String(t.projectId) === String(projId); })
+      .sort(function(a,b){ return (a.time||'')>(b.time||'')?1:-1; })
+      .map(function(t){ return t.time + ' — ' + t.desc; }).join('\n');
+
+    eventCtx = {
+      name: head.Title || head.name || 'Evento ' + evId,
+      venue: (head.Location && head.Location.Name) || head.venue || '',
+      date: head.StartDate ? head.StartDate.substring(0,10) : '',
+      timeline: tl || '',
+      team: teamStr,
+      protocols: ''
+    };
+
+    localStorage.setItem('ep-copiloto-ctx', JSON.stringify(eventCtx));
+    setLoadStatus('✓ ' + staffList.length + ' técnicos carregados');
+    setTimeout(function() {
+      showScreen('main');
+      initTimeline();
+    }, 600);
+  }).catch(function(e) {
+    loadFromLocalStorage(evId);
+  });
+}
+
+function loadFromLocalStorage(evId) {
+  // Fallback: load from pre-producao localStorage
+  const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
+  const tl = JSON.parse(localStorage.getItem('ep-timeline') || '[]');
+
+  // Try to find project by cbEventId
+  let p = projs.find(function(x){ return x.cbEventId && x.cbEventId.replace(/[^0-9]/g,'') === evId; });
+  if (!p) p = projs.find(function(x){ return String(x.id) === evId; });
+
+  const projTl = p ? tl.filter(function(t){ return String(t.projectId) === String(p.id); })
+    .sort(function(a,b){ return (a.time||'')>(b.time||'')?1:-1; })
+    .map(function(t){ return t.time + ' — ' + t.desc; }).join('\n') : '';
+
+  const team = p ? JSON.parse(localStorage.getItem('ep-proj-team-' + p.id) || '[]')
+    .map(function(m){ return m.name + (m.role?' — '+m.role:'') + (m.phone?' — '+m.phone:'') + (m.van?' ['+m.van+']':''); }).join('\n') : '';
+
   eventCtx = {
-    name: document.getElementById('ev-name').value.trim(),
-    venue: document.getElementById('ev-venue').value.trim(),
-    date: document.getElementById('ev-date').value.trim(),
-    timeline: document.getElementById('ev-timeline').value.trim(),
-    team: document.getElementById('ev-team').value.trim(),
-    protocols: document.getElementById('ev-protocols').value.trim(),
+    name: p ? p.name : 'Evento ' + evId,
+    venue: p ? (p.venue || '') : '',
+    date: p ? (p.date || '') : '',
+    timeline: projTl,
+    team: team,
+    protocols: p ? (p.protocols || '') : ''
   };
 
-  parseTimeline();
-  document.getElementById('header-event-name').textContent = eventCtx.name;
-  document.getElementById('screen-setup').classList.add('hidden');
-  document.getElementById('screen-main').classList.remove('hidden');
+  localStorage.setItem('ep-copiloto-ctx', JSON.stringify(eventCtx));
+  setLoadStatus(p ? '✓ ' + p.name : '✓ Pronto');
+  setTimeout(function() {
+    showScreen('main');
+    initTimeline();
+  }, 500);
+}
 
-  updateSyncBar();
-  renderCrewTab();
-  startClock();
-  updateContextPill();
-  addWelcomeMessage();
-
-  // Auto-start VAD
-  setTimeout(startVAD, 400);
-
-  // Auto-refresh CrewBrain every 5 minutes
-  if (syncInterval) clearInterval(syncInterval);
-  syncInterval = setInterval(refreshCrewBrain, 5 * 60 * 1000);
+function setLoadStatus(msg) {
+  var el = document.getElementById('ev-load-status');
+  if (el) el.textContent = msg;
 }
 
 function showSetup() {
@@ -1080,6 +1151,8 @@ function addToLog(text) {
   div.innerHTML = `<div class="log-item-time">${timeStr}</div><div class="log-item-text">${text}</div><span class="log-item-tag">auto-registado</span>`;
   list.insertBefore(div, list.firstChild);
 }
+
+document.addEventListener('DOMContentLoaded', loadProjectsFromStorage);
 </script>
 </body>
 </html>
