@@ -364,7 +364,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .card-save-btn { padding: 5px 14px; background: var(--y); border: none; border-radius: 6px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: #111; cursor: pointer; }
 .card-cancel-btn { padding: 5px 10px; background: none; border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--dim); cursor: pointer; }
 .card-save-label { font-family: var(--mono); font-size: 10px; color: var(--yd); flex: 1; }
-.card-edit-btn { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; color: var(--dim); transition: all 0.15s; z-index: 2; }
+.card-edit-btn { position: absolute; top: 10px; right: 10px; z-index:2; width: 26px; height: 26px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; display: none; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; color: var(--dim); transition: all 0.15s; z-index: 2; }
 .tecnico-card:hover .card-edit-btn { display: flex; }
 .card-edit-btn:hover { background: var(--y); border-color: var(--y); color: #111; }
 .skill-editor { display: flex; flex-direction: column; gap: 10px; }
@@ -2690,6 +2690,7 @@ function tecnicoCard(t) {
         ${t.needsEvaluation ? '<span class="cb-badge pending">avaliar</span>' : ''}
       </div>
       <button class="card-edit-btn" onclick="event.stopPropagation();openModal(${JSON.stringify(t.id)})" title="Abrir perfil completo">✎</button>
+      <button class="card-edit-btn" onclick="event.stopPropagation();deleteTecnicoFromGrid(${JSON.stringify(t.id)})" title="Eliminar técnico" style="right:38px;color:var(--red)">✕</button>
     </div>
 
     ${activeSkills.length > 0 ? `<div class="card-skills">${skillsBarsHtml}</div>` : ''}
@@ -3000,6 +3001,18 @@ function notify(msg) {
   const n = document.getElementById('notif');
   n.textContent = msg; n.classList.add('show');
   setTimeout(() => n.classList.remove('show'), 2800);
+}
+
+// ── DELETE TECNICO FROM GRID ─────────────────────────────────────────────────
+function deleteTecnicoFromGrid(id) {
+  const t = tecnicos.find(x => x.id == id);
+  if (!t) return;
+  if (!confirm('Eliminar "' + t.name + '" da base de dados?')) return;
+  tecnicos = tecnicos.filter(x => x.id != id);
+  save();
+  renderEquipaStats();
+  renderGrid();
+  notify('✓ ' + t.name + ' eliminado');
 }
 
 // ── INLINE EDITING ───────────────────────────────────────────────────────────
@@ -3393,6 +3406,7 @@ window.removeCustomCategory = removeCustomCategory;
 window.addCustomEquip = addCustomEquip;
 window.toggleCatManager = toggleCatManager;
 window.setStarInline = setStarInline;
+window.deleteTecnicoFromGrid = deleteTecnicoFromGrid;
 window.updateCardField = updateCardField;
 window.toggleCardSkills = toggleCardSkills;
 window.updateCardSkill = updateCardSkill;
