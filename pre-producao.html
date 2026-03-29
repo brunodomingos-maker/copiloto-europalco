@@ -1713,7 +1713,7 @@ function renderProjectDetail(projectId) {
     <div style="margin-top:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="section-title" style="margin-bottom:0">Equipa destacada (${getProjectTeam(p.id).length})</div>
-        <button onclick="syncTeamFromCB(${p.id})" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
+        <button onclick="window.syncTeamFromCB && window.syncTeamFromCB(${p.id})" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
       </div>
       <div class="proj-team-grid" id="proj-team-${p.id}">
         ${renderProjectTeamHTML(p.id)}
@@ -1894,7 +1894,9 @@ function editVan(projectId, idx, el) {
 }
 
 async function syncTeamFromCB(projectId) {
+  notify('A iniciar sync... projeto=' + projectId);
   const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
+  console.log('proxyUrl:', proxyUrl);
   if (!proxyUrl) { notify('Proxy GAS não configurado — vai a Google Sheets'); return; }
   notify('A sincronizar equipa do CrewBrain...');
   try {
