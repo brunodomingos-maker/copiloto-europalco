@@ -428,6 +428,32 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   .team-add-select:focus { border-color: var(--ym); }
   .team-add-btn { padding: 6px 12px; background: var(--y); border: none; border-radius: 7px; font-family: var(--sans); font-size: 12px; font-weight: 700; color: #111; cursor: pointer; }
   .van-input { font-family: var(--mono); font-size: 10px; padding: 3px 7px; border: 1px solid var(--ym); border-radius: 4px; background: var(--yl); color: var(--yd); outline: none; width: 100px; }
+
+/* ── OCORRÊNCIAS ── */
+.occ-list { display: flex; flex-direction: column; gap: 8px; }
+.occ-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; border-left: 3px solid var(--border2); transition: all 0.15s; }
+.occ-item:hover { border-color: var(--border2); }
+.occ-item.critico { border-left-color: var(--red); }
+.occ-item.aviso   { border-left-color: #E67E22; }
+.occ-item.info    { border-left-color: var(--blue); }
+.occ-item.resolved { opacity: 0.55; }
+.occ-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.occ-badge { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 4px; flex-shrink: 0; font-weight: 500; }
+.occ-badge.critico { background: rgba(192,57,43,0.1); color: var(--red); border: 1px solid rgba(192,57,43,0.2); }
+.occ-badge.aviso   { background: rgba(230,126,34,0.1); color: #E67E22; border: 1px solid rgba(230,126,34,0.2); }
+.occ-badge.info    { background: rgba(26,92,168,0.1); color: var(--blue); border: 1px solid rgba(26,92,168,0.2); }
+.occ-desc { font-family: var(--sans); font-size: 13px; color: var(--text); flex: 1; line-height: 1.4; }
+.occ-meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+.occ-meta-item { font-family: var(--mono); font-size: 10px; color: var(--dim); display: flex; align-items: center; gap: 4px; }
+.occ-resolve-btn { margin-left: auto; padding: 3px 10px; background: none; border: 1px solid var(--border); border-radius: 5px; font-family: var(--mono); font-size: 10px; color: var(--dim); cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+.occ-resolve-btn:hover { border-color: var(--green); color: var(--green); }
+.occ-resolve-btn.resolved { border-color: var(--green); color: var(--green); background: rgba(30,122,74,0.06); }
+.occ-form { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+.occ-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.occ-form select, .occ-form input { width: 100%; padding: 7px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; font-family: var(--mono); font-size: 11px; color: var(--text); outline: none; }
+.occ-form select:focus, .occ-form input:focus { border-color: var(--ym); }
+.occ-form textarea { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; font-family: var(--sans); font-size: 12px; color: var(--text); outline: none; resize: vertical; min-height: 60px; line-height: 1.5; margin-bottom: 8px; }
+.occ-form textarea:focus { border-color: var(--ym); }
 </style>
 </head>
 <body>
@@ -461,6 +487,14 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       <div class="nav-item" onclick="showView('equipa')" id="nav-equipa">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         Equipa Técnica
+      </div>
+      <div class="nav-item" onclick="showView('stats')" id="nav-stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Estatísticas
+      </div>
+      <div class="nav-item" onclick="showView('ocorrencias')" id="nav-ocorrencias">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Ocorrências
       </div>
       <div class="nav-section">Configuração</div>
       <div class="nav-item" onclick="showView('config')" id="nav-config">
@@ -579,7 +613,7 @@ function showView(view, projectId = null) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   const navEl = document.getElementById('nav-' + view);
   if (navEl) navEl.classList.add('active');
-  const titles = { dashboard:'Dashboard', projects:'Projetos', tarefas:'Tarefas', timeline:'Timeline', docs:'Documentos', config:'Google Sheets', equipa:'Equipa Técnica', 'project-detail':'Projeto' };
+  const titles = { dashboard:'Dashboard', projects:'Projetos', tarefas:'Tarefas', timeline:'Timeline', docs:'Documentos', config:'Google Sheets', equipa:'Equipa Técnica', 'project-detail':'Projeto', stats:'Estatísticas', ocorrencias:'Ocorrências' };
   document.getElementById('topbar-title').textContent = titles[view] || view;
   const content = document.getElementById('content');
   content.style.padding = '';
@@ -591,6 +625,8 @@ function showView(view, projectId = null) {
   else if (view === 'docs') renderDocs(projectId);
   else if (view === 'config') renderConfig();
   else if (view === 'equipa') renderEquipa();
+  else if (view === 'stats') renderStatsPage();
+  else if (view === 'ocorrencias') renderOcorrencias();
   else if (view === 'project-detail') renderProjectDetail(projectId);
   // Auto-resize textareas (runs after any view)
   requestAnimationFrame(() => {
@@ -1654,6 +1690,15 @@ function renderProjectDetail(projectId) {
             </div>`
           : '<div class="empty" style="padding:20px">Sem timeline definida</div>'}
 
+        <!-- Ocorrências do projeto -->
+        <div style="margin-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="section-title" style="margin-bottom:0">Ocorrências</div>
+          </div>
+          ${occFormHTML(p.id)}
+          <div class="occ-list" id="occ-proj-list-${p.id}"></div>
+        </div>
+
         <!-- Acções rápidas -->
         <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
           <div class="section-title" style="margin-bottom:6px">Acções rápidas</div>
@@ -1689,6 +1734,7 @@ function renderProjectDetail(projectId) {
       ta.style.height = 'auto';
       ta.style.height = ta.scrollHeight + 'px';
     });
+    renderOccList(p.id);
   });
 }
 
@@ -1907,6 +1953,280 @@ async function syncTeamFromCB(projectId) {
   }
 }
 
+// ── OCORRÊNCIAS ──────────────────────────────────────────────────────────────
+function getOcorrencias() {
+  return JSON.parse(localStorage.getItem('ep-ocorrencias') || '[]');
+}
+function saveOcorrencias(list) {
+  localStorage.setItem('ep-ocorrencias', JSON.stringify(list));
+}
+
+function addOcorrencia(projectId) {
+  var desc = document.getElementById('occ-desc-input');
+  var grav = document.getElementById('occ-grav-input');
+  var dept = document.getElementById('occ-dept-input');
+  var tec  = document.getElementById('occ-tec-input');
+  if (!desc || !desc.value.trim()) { notify('Descreve a ocorrência'); return; }
+
+  var allTecs = JSON.parse(localStorage.getItem('ep-tecnicos') || '[]');
+  var tecNome = tec && tec.value ? (allTecs.find(function(t){ return String(t.id) === tec.value; }) || {name: tec.value}).name : '';
+
+  var occ = {
+    id: Date.now(),
+    projectId: projectId || null,
+    desc: desc.value.trim(),
+    gravidade: grav ? grav.value : 'aviso',
+    dept: dept ? dept.value.trim() : '',
+    tecnico: tecNome,
+    estado: 'aberta',
+    ts: new Date().toISOString()
+  };
+  var list = getOcorrencias();
+  list.unshift(occ);
+  saveOcorrencias(list);
+  desc.value = '';
+  if (tec) tec.value = '';
+  renderOccList(projectId);
+  if (document.getElementById('occ-global-list')) renderOccList(null);
+  notify('Ocorrência registada');
+}
+
+function toggleOcorrencia(id) {
+  var list = getOcorrencias();
+  var occ = list.find(function(o){ return o.id === id; });
+  if (occ) occ.estado = occ.estado === 'resolvida' ? 'aberta' : 'resolvida';
+  saveOcorrencias(list);
+  var projId = occ ? occ.projectId : null;
+  renderOccList(projId);
+  if (document.getElementById('occ-global-list')) renderOccList(null);
+}
+
+function deleteOcorrencia(id) {
+  if (!confirm('Eliminar esta ocorrência?')) return;
+  var list = getOcorrencias().filter(function(o){ return o.id !== id; });
+  saveOcorrencias(list);
+  renderOccList(null);
+  notify('Ocorrência eliminada');
+}
+
+function renderOccList(projectId) {
+  var listId = projectId ? 'occ-proj-list-' + projectId : 'occ-global-list';
+  var el = document.getElementById(listId);
+  if (!el) return;
+  var list = getOcorrencias();
+  if (projectId !== null) list = list.filter(function(o){ return String(o.projectId) === String(projectId); });
+  if (list.length === 0) {
+    el.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--dim);padding:12px 0">Sem ocorrências registadas.</div>';
+    return;
+  }
+  el.innerHTML = list.map(function(occ) {
+    var d = new Date(occ.ts);
+    var hora = d.toLocaleTimeString('pt-PT', {hour:'2-digit',minute:'2-digit'});
+    var data = d.toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit'});
+    var proj = state && state.projects ? (state.projects.find(function(p){ return p.id === occ.projectId; }) || {}) : {};
+    return '<div class="occ-item ' + occ.gravidade + (occ.estado === "resolvida" ? " resolved" : "") + '">' +
+      '<div class="occ-header">' +
+        '<span class="occ-badge ' + occ.gravidade + '">' + occ.gravidade.toUpperCase() + '</span>' +
+        '<span class="occ-desc">' + occ.desc + '</span>' +
+      '</div>' +
+      '<div class="occ-meta">' +
+        '<span class="occ-meta-item">⏱ ' + hora + ' · ' + data + '</span>' +
+        (occ.dept ? '<span class="occ-meta-item">◉ ' + occ.dept + '</span>' : '') +
+        (occ.tecnico ? '<span class="occ-meta-item">👤 ' + occ.tecnico + '</span>' : '') +
+        (proj.name && !projectId ? '<span class="occ-meta-item" style="color:var(--yd)">◈ ' + proj.name + '</span>' : '') +
+        '<button class="occ-resolve-btn ' + (occ.estado === "resolvida" ? "resolved" : "") + '" onclick="toggleOcorrencia(' + occ.id + ')">' +
+          (occ.estado === 'resolvida' ? '✓ Resolvida' : 'Resolver') +
+        '</button>' +
+        (projectId === null ? '<button onclick="deleteOcorrencia(' + occ.id + ')" style="padding:3px 8px;background:none;border:none;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">✕</button>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function occFormHTML(projectId) {
+  var allTecs = JSON.parse(localStorage.getItem('ep-tecnicos') || '[]');
+  var depts = ['Som','Iluminação','Vídeo','Estruturas','Rigging','Segurança','Criativo','Automatismos','Câmara','Produção'];
+  return '<div class="occ-form">' +
+    '<textarea id="occ-desc-input" placeholder="Descreve a ocorrência..."></textarea>' +
+    '<div class="occ-form-grid">' +
+      '<select id="occ-grav-input">' +
+        '<option value="info">ℹ Info</option>' +
+        '<option value="aviso" selected>⚠ Aviso</option>' +
+        '<option value="critico">🔴 Crítico</option>' +
+      '</select>' +
+      '<input type="text" id="occ-dept-input" placeholder="Departamento afectado" list="occ-dept-list">' +
+      '<datalist id="occ-dept-list">' + depts.map(function(d){ return '<option value="' + d + '">'; }).join('') + '</datalist>' +
+    '</div>' +
+    '<div class="occ-form-grid">' +
+      '<select id="occ-tec-input"><option value="">— Técnico envolvido</option>' +
+        allTecs.map(function(t){ return '<option value="' + t.id + '">' + t.name + '</option>'; }).join('') +
+      '</select>' +
+      '<div style="display:flex;gap:6px">' +'<button class="btn-sm" onclick="addOcorrencia(' + (projectId || 'null') + ')" style="height:34px;flex:2">+ Registar</button>' +'<button onclick="cpToggle()" style="height:34px;padding:0 12px;background:#111;border:none;border-radius:7px;color:#F2C200;font-size:16px;cursor:pointer;flex-shrink:0" title="Registar via co-piloto">⬡</button>' +'</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderOcorrencias() {
+  var c = document.getElementById('content');
+  var list = getOcorrencias();
+  var abertas = list.filter(function(o){ return o.estado === 'aberta'; }).length;
+  var criticas = list.filter(function(o){ return o.gravidade === 'critico' && o.estado === 'aberta'; }).length;
+
+  c.innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">' +
+      '<div class="stat-card"><div class="stat-label">Total</div><div class="stat-value">' + list.length + '</div><div class="stat-sub">registadas</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Em aberto</div><div class="stat-value ' + (abertas > 0 ? 'yellow' : 'green') + '">' + abertas + '</div><div class="stat-sub">por resolver</div></div>' +
+      '<div class="stat-card"><div class="stat-label">Críticas</div><div class="stat-value ' + (criticas > 0 ? 'red' : 'green') + '">' + criticas + '</div><div class="stat-sub">activas</div></div>' +
+    '</div>' +
+    occFormHTML(null) +
+    '<div class="occ-list" id="occ-global-list"></div>';
+
+  renderOccList(null);
+}
+
+// ── STATS VIEW ───────────────────────────────────────────────────────────────
+function renderStatsPage() {
+  const c = document.getElementById('content');
+  const allTecs = JSON.parse(localStorage.getItem('ep-tecnicos') || '[]');
+  if (allTecs.length === 0) {
+    c.innerHTML = '<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--dim)">Sem dados. Sincroniza primeiro a Equipa Técnica com o CrewBrain.</div>';
+    return;
+  }
+
+  // Data: Type distribution
+  const types = { 'Colaborador': 0, 'Freelancer': 0, 'Subcontratado': 0, 'Outro': 0 };
+  allTecs.forEach(t => {
+    const k = t.type && types[t.type] !== undefined ? t.type : 'Outro';
+    types[k]++;
+  });
+  const total = allTecs.length;
+
+  // Data: avg rating by dept
+  const deptMap = {2:'Som',3:'Iluminação',4:'Vídeo',5:'Estruturas',6:'Rigging',8:'Segurança',9:'Criativo',22:'Automatismos',89:'Câmara',1:'Produção',13:'Gestão',15:'Direcção'};
+  const deptColors = {2:'#5B9BD5',3:'#00E5CC',4:'#B388FF',5:'#AAAAAA',6:'#AAAAAA',8:'#00C97A',9:'#FF7A50',22:'#F2C200',89:'#FF6B9D',1:'#888888',13:'#888888',15:'#888888'};
+  const deptStats = {};
+  allTecs.forEach(t => {
+    const d = t.deptId;
+    if (!d || !deptMap[d]) return;
+    if (!deptStats[d]) deptStats[d] = { name: deptMap[d], color: deptColors[d]||'#888', stars: [], count: 0 };
+    deptStats[d].count++;
+    if (t.stars > 0) deptStats[d].stars.push(t.stars);
+  });
+  const deptRows = Object.values(deptStats)
+    .filter(d => d.count > 0)
+    .sort((a,b) => b.count - a.count);
+
+  const typeColors = { 'Colaborador':'#1A5CA8', 'Freelancer':'#6B35B8', 'Subcontratado':'#C0392B', 'Outro':'#888' };
+  const typeEntries = Object.entries(types).filter(([,v]) => v > 0);
+  const maxPct = Math.max(...typeEntries.map(([,v]) => Math.round(v/total*100)));
+
+  c.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <!-- Distribuição por tipo -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px">
+        <div style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Distribuição por tipo</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:18px">${total} técnicos no total</div>
+
+        <!-- Donut via CSS -->
+        <div style="display:flex;justify-content:center;margin-bottom:20px">
+          <div style="position:relative;width:120px;height:120px">
+            <svg viewBox="0 0 120 120" style="width:120px;height:120px;transform:rotate(-90deg)">
+              ${(function(){
+                let offset = 0;
+                const r = 45; const circ = 2*Math.PI*r;
+                return typeEntries.map(([k,v]) => {
+                  const pct = v/total;
+                  const dash = pct*circ;
+                  const gap = circ - dash;
+                  const el = '<circle cx="60" cy="60" r="' + r + '" fill="none" stroke="' + typeColors[k] + '" stroke-width="18" stroke-dasharray="' + dash.toFixed(1) + ' ' + gap.toFixed(1) + '" stroke-dashoffset="-' + offset.toFixed(1) + '"/>';
+                  offset += dash;
+                  return el;
+                }).join('');
+              })()}
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font-family:var(--sans);font-size:22px;font-weight:900;color:var(--text)">${total}</div>
+              <div style="font-family:var(--mono);font-size:9px;color:var(--dim)">total</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Legend + table -->
+        ${typeEntries.map(([k,v]) => `
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="width:10px;height:10px;border-radius:50%;background:${typeColors[k]};flex-shrink:0"></div>
+            <div style="font-family:var(--sans);font-size:13px;color:var(--text);flex:1">${k}</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--dim)">${Math.round(v/total*100)}%</div>
+            <div style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--text);width:28px;text-align:right">${v}</div>
+          </div>
+          <div style="height:5px;background:var(--bg);border-radius:3px;margin-bottom:12px;overflow:hidden">
+            <div style="height:100%;width:${Math.round(v/total*100)}%;background:${typeColors[k]};border-radius:3px;transition:width 0.4s"></div>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Avaliação média por departamento -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px">
+        <div style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">Avaliação média por departamento</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:18px">Escala de 1 a 5 estrelas</div>
+        ${deptRows.length === 0
+          ? '<div style="font-family:var(--mono);font-size:11px;color:var(--dim)">Sem avaliações por departamento. Define o departamento em cada técnico.</div>'
+          : deptRows.map(d => {
+              const avg = d.stars.length > 0 ? (d.stars.reduce((s,v)=>s+v,0)/d.stars.length).toFixed(1) : '—';
+              const pct = d.stars.length > 0 ? (parseFloat(avg)/5*100).toFixed(0) : 0;
+              return '<div style="margin-bottom:14px">' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">' +
+                  '<div style="display:flex;align-items:center;gap:7px">' +
+                    '<div style="width:8px;height:8px;border-radius:50%;background:' + d.color + ';flex-shrink:0"></div>' +
+                    '<span style="font-family:var(--sans);font-size:12px;color:var(--text)">' + d.name + '</span>' +
+                    '<span style="font-family:var(--mono);font-size:10px;color:var(--dim)">(' + d.count + ')</span>' +
+                  '</div>' +
+                  '<div style="display:flex;align-items:center;gap:4px">' +
+                    '<span style="font-family:var(--mono);font-size:11px;font-weight:500;color:var(--yd)">' + avg + '</span>' +
+                    '<span style="font-size:11px;color:var(--y)">★</span>' +
+                  '</div>' +
+                '</div>' +
+                '<div style="height:5px;background:var(--bg);border-radius:3px;overflow:hidden">' +
+                  '<div style="height:100%;width:' + pct + '%;background:' + d.color + ';border-radius:3px;transition:width 0.4s"></div>' +
+                '</div>' +
+              '</div>';
+            }).join('')
+        }
+      </div>
+    </div>
+
+    <!-- Tabela resumo -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-top:20px">
+      <div style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px">Resumo por departamento</div>
+      <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:6px 10px;color:var(--dim);font-weight:400;letter-spacing:0.08em;text-transform:uppercase;font-size:9px">Departamento</th>
+            <th style="text-align:right;padding:6px 10px;color:var(--dim);font-weight:400;letter-spacing:0.08em;text-transform:uppercase;font-size:9px">Total</th>
+            <th style="text-align:right;padding:6px 10px;color:var(--dim);font-weight:400;letter-spacing:0.08em;text-transform:uppercase;font-size:9px">Avaliação</th>
+            <th style="text-align:right;padding:6px 10px;color:var(--dim);font-weight:400;letter-spacing:0.08em;text-transform:uppercase;font-size:9px">Avaliados</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${deptRows.map(d => {
+            const avg = d.stars.length > 0 ? (d.stars.reduce((s,v)=>s+v,0)/d.stars.length).toFixed(1) : '—';
+            return '<tr style="border-bottom:1px solid var(--border)">' +
+              '<td style="padding:8px 10px;display:flex;align-items:center;gap:7px">' +
+                '<div style="width:7px;height:7px;border-radius:50%;background:' + d.color + '"></div>' +
+                '<span style="color:var(--text)">' + d.name + '</span>' +
+              '</td>' +
+              '<td style="padding:8px 10px;text-align:right;color:var(--text);font-weight:700">' + d.count + '</td>' +
+              '<td style="padding:8px 10px;text-align:right;color:var(--yd)">' + avg + (avg !== '—' ? ' ★' : '') + '</td>' +
+              '<td style="padding:8px 10px;text-align:right;color:var(--dim)">' + d.stars.length + '/' + d.count + '</td>' +
+            '</tr>';
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 // ── EQUIPA VIEW ──────────────────────────────────────────────────────────────
 function renderEquipa() {
   const c = document.getElementById('content');
@@ -1967,6 +2287,31 @@ requestAnimationFrame(() => {
     ta.style.height = 'auto';
     ta.style.height = ta.scrollHeight + 'px';
   });
+});
+
+// ── CO-PILOTO: LISTENER POSTMESSAGE ──────────────────────────────────────────
+window.addEventListener('message', function(e) {
+  if (!e.data || e.data.source !== 'copiloto-europalco') return;
+  var action = e.data.action;
+  if (action === 'registarOcorrencia' && e.data.payload) {
+    var result = window.registarOcorrencia(e.data.payload);
+    // Notify user
+    var n = document.getElementById('notif');
+    if (n && result.success) {
+      n.textContent = '✓ Co-piloto registou: ' + e.data.payload.desc.substring(0, 50);
+      n.classList.add('show');
+      setTimeout(function(){ n.classList.remove('show'); }, 3000);
+    }
+    // Switch to ocorrencias view if not already there
+    if (result.success && typeof showView === 'function') {
+      if (e.data.payload.projectId) {
+        showView('project-detail', e.data.payload.projectId);
+      }
+    }
+  }
+  if (action === 'ping') {
+    e.source.postMessage({ source: 'pre-producao', action: 'pong', projects: state ? state.projects.map(function(p){ return {id:p.id, name:p.name}; }) : [] }, '*');
+  }
 });
 </script>
 
@@ -2096,7 +2441,7 @@ function confirmClock() {
 
 <!-- EQUIPA MODAL -->
 <!-- MODAL -->
-<div class="modal-overlay" id="eq-modal-overlay" onclick="if(typeof maybeCloseEq==='function')maybeCloseEq(event)">
+<div class="modal-overlay" id="eq-modal-overlay" onclick="if(event.target===this)closeModalEq()">
   <div class="modal" id="eq-modal">
     <div class="modal-head">
       <div class="modal-avatar" id="modal-avatar" style="background:#F2C200">AB</div>
@@ -2121,6 +2466,25 @@ function confirmClock() {
         </div>
         <div class="field"><label>Estado CrewBrain</label>
           <select id="f-cb"><option value="none">Não registado</option><option value="confirmed">Confirmado</option><option value="pending">Pendente</option></select>
+        </div>
+        <div class="field"><label>Departamento</label>
+          <select id="f-dept">
+            <option value="0">— Sem departamento</option>
+            <option value="2">Som / Audio</option>
+            <option value="3">Iluminação / Light</option>
+            <option value="4">Vídeo / Video</option>
+            <option value="5">Estruturas</option>
+            <option value="6">Rigging</option>
+            <option value="8">Segurança / Safety</option>
+            <option value="9">Criativo</option>
+            <option value="22">Automatismos</option>
+            <option value="89">Câmara</option>
+            <option value="1">Produção</option>
+            <option value="13">Gestão</option>
+            <option value="15">Direcção</option>
+            <option value="24">Subcontratado</option>
+            <option value="25">IT / Sistemas</option>
+          </select>
         </div>
       </div>
 
@@ -2440,21 +2804,26 @@ function renderGrid() {
 // ── DEPT COLOUR MAP ───────────────────────────────────────────────────────────
 const DEPT_COLORS = {
   2:  { bg: '#0D1B2A', text: '#5B9BD5', label: 'Som' },        // Som - Azul Escuro
-  3:  { bg: '#003B4A', text: '#00C9E0', label: 'Luz' },        // Iluminação - Azul Ciano
-  4:  { bg: '#2A1A4A', text: '#B388FF', label: 'Vídeo' },      // Vídeo - Roxo
-  5:  { bg: '#111111', text: '#BBBBBB', label: 'Estruturas' },  // Estruturas - Preto
-  6:  { bg: '#2C2C2C', text: '#999999', label: 'Rigging' },    // Rigging - Antracite
+  3:  { bg: '#003D40', text: '#00E5CC', label: 'Luz' },        // Iluminação - Turquesa
+  4:  { bg: '#1E0A3C', text: '#B388FF', label: 'Vídeo' },      // Vídeo - Roxo
+  5:  { bg: '#2A2A2A', text: '#AAAAAA', label: 'Estruturas' }, // Estruturas - Cinza
+  6:  { bg: '#2A2A2A', text: '#AAAAAA', label: 'Rigging' },    // Rigging - Cinza
   8:  { bg: '#0A3D2A', text: '#00C97A', label: 'Segurança' },  // Segurança - Verde Esmeralda
   9:  { bg: '#3D1A0A', text: '#FF7A50', label: 'Criativo' },   // Criativo - Laranja Coral
-  16: { bg: '#2A1A4A', text: '#B388FF', label: 'Vídeo' },      // Vídeo 2
+  16: { bg: '#1E0A3C', text: '#B388FF', label: 'Vídeo' },      // Vídeo 2 - Roxo
+  17: { bg: '#1E0A3C', text: '#B388FF', label: 'Vídeo' },      // Vídeo 3 - Roxo
+  18: { bg: '#003D40', text: '#00E5CC', label: 'Luz' },        // Luz 2 - Turquesa
+  19: { bg: '#2A2A2A', text: '#AAAAAA', label: 'Estruturas' }, // Estruturas 2 - Cinza
   22: { bg: '#3D3200', text: '#F2C200', label: 'Automatismos' }, // Automatismos - Amarelo
-  89: { bg: '#4A1A30', text: '#FF80B0', label: 'Câmara' },     // Câmara - Rosa
-  // Produção / Gestão
-  1:  { bg: '#F0F2F5', text: '#444444', label: 'Produção' },
-  13: { bg: '#F0F2F5', text: '#444444', label: 'Gestão' },
-  15: { bg: '#F0F2F5', text: '#444444', label: 'Direcção' },
-  68: { bg: '#F0F2F5', text: '#444444', label: 'Gestão Proj.' },
-  // Outros / Sem dept
+  23: { bg: '#2A2A2A', text: '#AAAAAA', label: 'Estruturas' }, // Estruturas 3 - Cinza
+  89: { bg: '#3D0A20', text: '#FF6B9D', label: 'Câmara' },     // Câmara - Rosa
+  // Mobiliário / Produção / Gestão - Preto
+  1:  { bg: '#0A0A0A', text: '#888888', label: 'Produção' },
+  13: { bg: '#0A0A0A', text: '#888888', label: 'Gestão' },
+  15: { bg: '#0A0A0A', text: '#888888', label: 'Direcção' },
+  68: { bg: '#0A0A0A', text: '#888888', label: 'Gestão Proj.' },
+  67: { bg: '#0A0A0A', text: '#888888', label: 'Mobiliário' }, // Mobiliário - Preto
+  // Outros / Sem dept - Bege
   0:  { bg: '#F5F0E8', text: '#888070', label: '' },
   24: { bg: '#F5F0E8', text: '#888070', label: 'Subcontratado' },
   25: { bg: '#F5F0E8', text: '#888070', label: 'IT' },
@@ -2539,6 +2908,8 @@ function openModal(id) {
   document.getElementById('f-phone').value = t?.phone || '';
   document.getElementById('f-email').value = t?.email || '';
   document.getElementById('f-cb').value = t?.cb || 'none';
+  var deptEl2 = document.getElementById('f-dept');
+  if (deptEl2) deptEl2.value = String(t?.deptId || 0);
   document.getElementById('f-notes').value = t?.notes || '';
 
   // Stars
@@ -2585,7 +2956,15 @@ function openModal(id) {
   document.getElementById('eq-modal-overlay').classList.add('show');
 }
 
-function closeModalEq() { var el = document.getElementById('eq-modal-overlay'); if(el) el.classList.remove('show'); }
+function closeModalEq(force) {
+  if (!force && window._modalDirty) {
+    var choice = confirm('Tens alterações por guardar.\nGuardar antes de sair?');
+    if (choice) { saveTecnico(); return; }
+  }
+  window._modalDirty = false;
+  var el = document.getElementById('eq-modal-overlay');
+  if (el) el.classList.remove('show');
+}
 function maybeCloseEq(e) { if (e.target === document.getElementById('eq-modal-overlay')) closeModal(); }
 
 function updateModalHeader() {
@@ -2669,23 +3048,25 @@ function saveTecnico() {
     certs: [...currentCerts],
   };
 
+  const deptEl = document.getElementById('f-dept');
+  if (deptEl) data.deptId = parseInt(deptEl.value) || 0;
   data.needsEvaluation = false;
   data.fromDemo = false;
   if (editingId) {
     const idx = tecnicos.findIndex(t=>t.id===editingId);
     tecnicos[idx] = data;
-    notify('Perfil actualizado');
+    window._modalDirty = false; notify('Perfil actualizado');
   } else {
     tecnicos.push(data);
-    notify('Técnico adicionado');
+    window._modalDirty = false; notify('Técnico adicionado');
   }
-  save(); closeModal(); if(document.getElementById('stats-bar-eq'))renderEquipaStats(); if(document.getElementById('tecnico-grid'))renderGrid();
+  save(); if(document.getElementById('stats-bar-eq'))renderEquipaStats(); if(document.getElementById('tecnico-grid'))renderGrid(); closeModalEq(true);
 }
 
 function deleteTecnico() {
   if (!confirm('Eliminar este técnico?')) return;
   tecnicos = tecnicos.filter(t=>t.id!==editingId);
-  save(); closeModal(); if(document.getElementById('stats-bar-eq'))renderEquipaStats(); if(document.getElementById('tecnico-grid'))renderGrid(); notify('Técnico eliminado');
+  save(); if(document.getElementById('stats-bar-eq'))renderEquipaStats(); if(document.getElementById('tecnico-grid'))renderGrid(); closeModalEq(true); notify('Técnico eliminado');
 }
 
 // ── CUSTOM CATEGORIES & EQUIPMENT ────────────────────────────────────────────
@@ -3178,6 +3559,16 @@ function renderEquipaStats() {
   `;
 }
 
+
+// ESC key handler for equipa modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    var overlay = document.getElementById('eq-modal-overlay');
+    if (overlay && overlay.classList.contains('show')) {
+      closeModalEq();
+    }
+  }
+});
 
 </script>
 

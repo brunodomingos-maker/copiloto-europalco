@@ -982,6 +982,18 @@ async function sendToAI(userText) {
 function processAIResponse(text) {
   const logMatches = text.match(/\[REGISTO:\s*(.+?)\]/g);
   if (logMatches) logMatches.forEach(m => addToLog(m.replace(/\[REGISTO:\s*/,'').replace(/\]$/,'')));
+  // Send occurrences to pre-producao via postMessage
+  const occMatches = text.match(/\[OCORRENCIA:\s*({[\s\S]+?})\]/);
+  if (occMatches) {
+    try {
+      const payload = JSON.parse(occMatches[1]);
+      const msg = { source: 'copiloto-europalco', action: 'registarOcorrencia', payload: payload };
+      if (window.opener) window.opener.postMessage(msg, '*');
+      if (window.parent !== window) window.parent.postMessage(msg, '*');
+      addToLog('Ocorrência registada: ' + (payload.desc || ''));
+    } catch(e) { console.log('OCORRENCIA parse error', e); }
+  }
+
   const clean = text.replace(/\[REGISTO:\s*.+?\]/g,'').trim();
   addMessage('ai', clean||text);
   messages.push({ role:'assistant', content:text });
