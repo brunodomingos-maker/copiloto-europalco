@@ -1944,7 +1944,6 @@ async function syncTeamFromCB(projectId) {
     notify('Erro CrewBrain: ' + e.message);
   }
 }
-window.syncTeamFromCB = syncTeamFromCB;
 
 // ── OCORRÊNCIAS ──────────────────────────────────────────────────────────────
 function getOcorrencias() {
@@ -2306,6 +2305,19 @@ window.addEventListener('message', function(e) {
     e.source.postMessage({ source: 'pre-producao', action: 'pong', projects: state ? state.projects.map(function(p){ return {id:p.id, name:p.name}; }) : [] }, '*');
   }
 });
+
+// ── EXPOSE GLOBALS ────────────────────────────────────────────────────────────
+window.syncTeamFromCB        = syncTeamFromCB;
+window.addTecnicoToProject   = addTecnicoToProject;
+window.removeTecnicoFromProject = removeTecnicoFromProject;
+window.editVan               = editVan;
+window.editProjectCBId       = editProjectCBId;
+window.deleteProject         = deleteProject;
+window.addOcorrencia         = addOcorrencia;
+window.toggleOcorrencia      = toggleOcorrencia;
+window.deleteOcorrencia      = deleteOcorrencia;
+window.renderOccList         = renderOccList;
+window.deleteTecnicoFromGrid = deleteTecnicoFromGrid;
 </script>
 
 <!-- CLOCK PICKER -->
@@ -3567,13 +3579,3 @@ document.addEventListener('keydown', function(e) {
 
 </body>
 </html>
-
-window.addTecnicoToProject = addTecnicoToProject;
-window.removeTecnicoFromProject = removeTecnicoFromProject;
-window.editVan = editVan;
-window.editProjectCBId = editProjectCBId;
-window.deleteProject = deleteProject;
-window.addOcorrencia = addOcorrencia;
-window.toggleOcorrencia = toggleOcorrencia;
-window.deleteOcorrencia = deleteOcorrencia;
-window.renderOccList = renderOccList;
