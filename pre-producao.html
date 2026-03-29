@@ -1673,6 +1673,15 @@ function renderProjectDetail(projectId) {
   });
 }
 
+// ── CREWBRAIN CONFIG (global) ────────────────────────────────────────────────
+function getCBConfigGlobal() {
+  return {
+    url: localStorage.getItem('ep-cb-url') || '',
+    auth: localStorage.getItem('ep-cb-auth') || '',
+    eventId: localStorage.getItem('ep-cb-eventid') || '',
+  };
+}
+
 // ── PROJECT TEAM MANAGEMENT ──────────────────────────────────────────────────
 const AVATAR_COLORS_PROJ = ['#F2C200','#1A5CA8','#1E7A4A','#C0392B','#6B35B8','#E67E22','#16A085'];
 
@@ -1770,16 +1779,35 @@ function editVan(projectId, idx, el) {
 }
 
 async function syncTeamFromCB(projectId) {
-  const cfg = { url: localStorage.getItem('ep-cb-url')||'', auth: localStorage.getItem('ep-cb-auth')||'', eventId: localStorage.getItem('ep-cb-eventid')||'' };
+  const cfg = getCBConfigGlobal();
   if (!cfg.url || !cfg.auth) { notify('CrewBrain não configurado — vai a Equipa Técnica para configurar'); return; }
   notify('A sincronizar equipa do CrewBrain...');
   try {
-    const headers = { 'Authorization': 'Basic ' + btoa(cfg.auth), 'Accept': 'application/json' };
+    const baseUrl = cfg.url.replace(/\/v2$/, '').replace(/\/$/, '');
+    const authHeader = 'Basic ' + btoa(cfg.auth);
     const eventId = cfg.eventId || projectId;
-    const res = await fetch(cfg.url + '/events/' + eventId + '/resources/allNamesInEvent', { headers });
-    if (!res.ok) throw new Error('Evento não encontrado');
-    const data = await res.json();
-    const staff = Array.isArray(data) ? data : (data.resources || data.staff || data.data || []);
+    const endpoint = baseUrl + '/api/v2/events/' + eventId + '/resources/allNamesInEvent';
+
+    // Use Anthropic API as proxy to bypass CORS
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: 'You make HTTP GET requests and return ONLY the raw JSON response. Nothing else.',
+        messages: [{ role: 'user', content: 'Make a GET request to: ' + endpoint + ' with header Authorization: ' + authHeader + ' and Accept: application/json. Return ONLY the raw JSON.' }]
+      })
+    });
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const apiData = await res.json();
+    const text = apiData.content.filter(function(b){ return b.type==='text'; }).map(function(b){ return b.text; }).join('');
+    var cbData = null;
+    var jsonMatch = text.match(/\[([\s\S]*)\]|\{([\s\S]*)\}/);
+    if (jsonMatch) { try { cbData = JSON.parse(jsonMatch[0]); } catch(e2) {} }
+    if (!cbData) throw new Error('Sem dados do CrewBrain');
+    const staff = Array.isArray(cbData) ? cbData : (cbData.data || cbData.resources || cbData.staff || []);
     const team = getProjectTeam(projectId);
     const existing = new Set(team.map(m => m.name.toLowerCase()));
     let added = 0;
