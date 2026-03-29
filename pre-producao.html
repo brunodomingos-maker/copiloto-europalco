@@ -1627,7 +1627,7 @@ function renderProjectDetail(projectId) {
       </div>
       <span class="badge ${statusClass[p.status]}" style="font-size:11px;padding:4px 12px">${statusLabels[p.status]}</span>
       <div style="display:flex;align-items:center;gap:6px">
-        ${p.cbEventId ? `<span style="font-family:var(--mono);font-size:10px;background:rgba(26,92,168,0.1);color:var(--blue);border:1px solid rgba(26,92,168,0.2);border-radius:5px;padding:3px 8px">CB: ${p.cbEventId}</span>` : ''}
+        ${p.cbEventId ? `<span style="font-family:var(--mono);font-size:10px;background:rgba(26,92,168,0.1);color:var(--blue);border:1px solid rgba(26,92,168,0.2);border-radius:5px;padding:3px 8px">${p.cbEventId}</span>` : ''}
         <button onclick="editProjectCBId(${p.id})" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer" title="Associar evento CrewBrain">⚙ CrewBrain</button>
       </div>
       <button onclick="deleteProject(${p.id})" style="padding:7px 14px;background:none;border:1px solid rgba(192,57,43,0.3);border-radius:7px;font-family:var(--mono);font-size:11px;color:var(--red);cursor:pointer">🗑 Eliminar</button>
