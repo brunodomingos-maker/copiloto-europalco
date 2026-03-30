@@ -2342,9 +2342,8 @@ window.deleteTecnicoFromGrid = deleteTecnicoFromGrid;
 
 // ── IMPORTAR EQUIPA VIA EXCEL (CrewBrain Personnel Plan) ─────────────────────
 window.importEquipaExcel = function(projectId) {
-  var input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.xlsx,.xls,.csv';
+  var input = document.getElementById('excel-import-input');
+  input.value = '';
   input.onchange = function(e) {
     var file = e.target.files[0];
     if (!file) return;
