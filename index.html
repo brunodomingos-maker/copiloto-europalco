@@ -330,7 +330,8 @@ function getCBBase() {
 }
 
 function getCBEventId() {
-  return document.getElementById('cb-eventid').value.trim();
+  var el = document.getElementById('cb-eventid');
+  return el ? el.value.trim() : (eventCtx && eventCtx.cbId ? String(eventCtx.cbId) : '');
 }
 
 function loadProjectsFromStorage() {
