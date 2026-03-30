@@ -1728,13 +1728,11 @@ function renderProjectDetail(projectId) {
         <button data-pid="${p.id}" data-act="sync" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
       </div>
       <label for="excel-import-input" data-pid="${p.id}" data-act="import-label"
-        style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-               border:1.5px dashed var(--border2);border-radius:10px;padding:16px 12px;
-               cursor:pointer;transition:all 0.15s;margin-bottom:12px;background:var(--bg)"
         id="excel-drop-zone"
+        style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--border2);border-radius:10px;padding:16px 12px;cursor:pointer;transition:all 0.15s;margin-bottom:12px;background:var(--bg)"
         ondragover="event.preventDefault();this.style.borderColor='var(--ym)';this.style.background='rgba(242,194,0,0.04)'"
         ondragleave="this.style.borderColor='';this.style.background=''"
-        ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';window._importPid=${p.id};var f=event.dataTransfer.files[0];if(f){var inp=document.getElementById('excel-import-input');inp.value='';window._importPid=${p.id};var dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;inp.dispatchEvent(new Event('change'));}">
+        ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';var f=event.dataTransfer.files[0];if(f)window.processExcelFile(f,${p.id})">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--dim)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">Arrastar Excel aqui ou <span style="color:var(--yd);text-decoration:underline">seleccionar ficheiro</span></span>
         <span style="font-family:var(--mono);font-size:9px;color:var(--dim);opacity:0.6">Personnel Plan exportado do CrewBrain (.xlsx)</span>
@@ -2354,77 +2352,83 @@ window.renderOccList         = renderOccList;
 window.deleteTecnicoFromGrid = deleteTecnicoFromGrid;
 
 // ── IMPORTAR EQUIPA VIA EXCEL (CrewBrain Personnel Plan) ─────────────────────
+window.processExcelFile = function(file, projectId) {
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = new Uint8Array(ev.target.result);
+      var wb = XLSX.read(data, {type: 'array'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
+      window._processExcelRows(rows, projectId);
+    } catch(err) {
+      notify('Erro ao ler ficheiro: ' + err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+
+window._processExcelRows = function(rows, pid) {
+  var roleTerms = ['Técnico','Operador','Manager','Gestor','Riger','Director',
+    'Iluminação','Som/','Video','Estruturas','Segurança','Rigging',
+    'ShowExpress','Stagehands','Câmara','Automatismos','Produção',
+    'Carpinteiro','Vinilador','Realizador','Assistente','Motorista',
+    'Fotografo','DJ','Show Caller','Stage Manager','Apresentador',
+    'Tradutora','Editor','Serralheiro','Maquilhadora','Pintor','AudioTechnician'];
+  var skipTerms = ['Employees','Billing factor','C2','Hotel','Event','Friday',
+    'Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday',
+    'Comercial','StageHand','Freelancers','Subcontractors','Camião',
+    'City Trailer','Ligeiro','Carga','Passageiros','Dacia','Ford',
+    'Peugeot','Reboque','Semi','Galera','Serejo','Trator','Pass.',
+    'Renault','Iveco','Citroen','Master','Boxer','Partner','Jogger','Transit'];
+
+  var currentRole = '';
+  var people = [];
+  var seen = new Set();
+
+  rows.forEach(function(row, i) {
+    if (i < 6) return;
+    var name = (row[0] || '').toString().trim();
+    if (!name) return;
+    if (skipTerms.some(function(s){ return name.includes(s); })) return;
+    if (name.includes('(ID') || name.includes('Lda')) return;
+    if (roleTerms.some(function(r){ return name.includes(r); })) {
+      currentRole = name;
+    } else if (!seen.has(name)) {
+      seen.add(name);
+      people.push({ name: name, role: currentRole, phone: '', van: '' });
+    }
+  });
+
+  if (people.length === 0) { notify('Nenhum técnico encontrado no ficheiro'); return; }
+
+  // Merge with existing team
+  var team = getProjectTeam(projectId);
+  var existingNames = new Set(team.map(function(m){ return m.name.toLowerCase(); }));
+  var added = 0;
+  people.forEach(function(p) {
+    if (!existingNames.has(p.name.toLowerCase())) {
+      team.push(p);
+      existingNames.add(p.name.toLowerCase());
+      added++;
+    }
+  });
+  saveProjectTeam(pid, team);
+  var el = document.getElementById('proj-team-' + pid);
+  if (el) el.innerHTML = renderProjectTeamHTML(pid);
+  notify('✓ ' + added + ' técnicos importados do Excel (' + people.length + ' no ficheiro)');
+};
+
 window.importEquipaExcel = function(projectId) {
-  var input = document.getElementById('excel-import-input');
-  input.value = '';
   window._importPid = projectId;
+  var input = document.getElementById('excel-import-input');
+  if (!input) { notify('Erro: input não encontrado'); return; }
+  input.value = '';
   input.onchange = function(e) {
-    var pid = window._importPid || projectId;
-    var file = e.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      try {
-        // Use SheetJS to parse
-        var data = new Uint8Array(ev.target.result);
-        var wb = XLSX.read(data, {type: 'array'});
-        var ws = wb.Sheets[wb.SheetNames[0]];
-        var rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
-
-        var roleTerms = ['Técnico','Operador','Manager','Gestor','Riger','Director',
-          'Iluminação','Som/','Video','Estruturas','Segurança','Rigging',
-          'ShowExpress','Stagehands','Câmara','Automatismos','Produção',
-          'Carpinteiro','Vinilador','Realizador','Assistente','Motorista',
-          'Fotografo','DJ','Show Caller','Stage Manager','Apresentador',
-          'Tradutora','Editor','Serralheiro','Maquilhadora','Pintor','AudioTechnician'];
-        var skipTerms = ['Employees','Billing factor','C2','Hotel','Event','Friday',
-          'Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday',
-          'Comercial','StageHand','Freelancers','Subcontractors','Camião',
-          'City Trailer','Ligeiro','Carga','Passageiros','Dacia','Ford',
-          'Peugeot','Reboque','Semi','Galera','Serejo','Trator','Pass.',
-          'Renault','Iveco','Citroen','Master','Boxer','Partner','Jogger','Transit'];
-
-        var currentRole = '';
-        var people = [];
-        var seen = new Set();
-
-        rows.forEach(function(row, i) {
-          if (i < 6) return;
-          var name = (row[0] || '').toString().trim();
-          if (!name) return;
-          if (skipTerms.some(function(s){ return name.includes(s); })) return;
-          if (name.includes('(ID') || name.includes('Lda')) return;
-          if (roleTerms.some(function(r){ return name.includes(r); })) {
-            currentRole = name;
-          } else if (!seen.has(name)) {
-            seen.add(name);
-            people.push({ name: name, role: currentRole, phone: '', van: '' });
-          }
-        });
-
-        if (people.length === 0) { notify('Nenhum técnico encontrado no ficheiro'); return; }
-
-        // Merge with existing team
-        var team = getProjectTeam(projectId);
-        var existingNames = new Set(team.map(function(m){ return m.name.toLowerCase(); }));
-        var added = 0;
-        people.forEach(function(p) {
-          if (!existingNames.has(p.name.toLowerCase())) {
-            team.push(p);
-            existingNames.add(p.name.toLowerCase());
-            added++;
-          }
-        });
-        saveProjectTeam(pid, team);
-        var el = document.getElementById('proj-team-' + pid);
-        if (el) el.innerHTML = renderProjectTeamHTML(pid);
-        notify('✓ ' + added + ' técnicos importados do Excel (' + people.length + ' no ficheiro)');
-      } catch(err) {
-        notify('Erro ao ler ficheiro: ' + err.message);
-        console.error(err);
-      }
-    };
-    reader.readAsArrayBuffer(file);
+    var f = e.target.files[0];
+    if (f) window.processExcelFile(f, window._importPid);
   };
   input.click();
 };
@@ -2528,27 +2532,27 @@ function confirmClock() {
     </div>
     <div class="email-box-body">
       <div class="email-field">
-        <label>Para (email do responsável)</label>
-        <input type="email" id="ec-to" placeholder="email@exemplo.com">
+  <label>Para (email do responsável)</label>
+  <input type="email" id="ec-to" placeholder="email@exemplo.com">
       </div>
       <div class="email-field">
-        <label>Assunto</label>
-        <input type="text" id="ec-subject">
+  <label>Assunto</label>
+  <input type="text" id="ec-subject">
       </div>
       <div class="email-field">
-        <label>Mensagem adicional (opcional)</label>
-        <textarea id="ec-message" placeholder="Acrescenta aqui informação adicional ou contexto..."></textarea>
+  <label>Mensagem adicional (opcional)</label>
+  <textarea id="ec-message" placeholder="Acrescenta aqui informação adicional ou contexto..."></textarea>
       </div>
       <div>
-        <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-bottom:6px">Informação da tarefa incluída no email</div>
-        <div class="email-task-preview" id="ec-preview"></div>
+  <div style="font-family:var(--mono);font-size:9px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-bottom:6px">Informação da tarefa incluída no email</div>
+  <div class="email-task-preview" id="ec-preview"></div>
       </div>
     </div>
     <div class="email-box-footer">
       <button class="email-cancel-btn" onclick="closeEmailCompose()">Cancelar</button>
       <button class="email-send-btn" onclick="confirmSendEmail()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
-        Enviar email
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+  Enviar email
       </button>
     </div>
   </div>
@@ -2561,8 +2565,8 @@ function confirmClock() {
     <div class="modal-head">
       <div class="modal-avatar" id="modal-avatar" style="background:#F2C200">AB</div>
       <div>
-        <div class="modal-name" id="modal-title-name">Novo Técnico</div>
-        <div class="modal-role" id="modal-title-role">Preenche os dados abaixo</div>
+  <div class="modal-name" id="modal-title-name">Novo Técnico</div>
+  <div class="modal-role" id="modal-title-role">Preenche os dados abaixo</div>
       </div>
       <button onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()" style="margin-left:auto;background:none;border:none;font-size:20px;color:var(--dim);cursor:pointer">×</button>
     </div>
@@ -2570,126 +2574,126 @@ function confirmClock() {
 
       <!-- Dados pessoais -->
       <div class="modal-section">
-        <div class="modal-section-title">Dados pessoais</div>
-        <div class="field-row">
-          <div class="field"><label>Nome completo</label><input type="text" id="f-name" placeholder="ex: João Silva" oninput="updateModalHeader()"></div>
-          <div class="field"><label>Função principal</label><input type="text" id="f-role" placeholder="ex: Técnico de Som" oninput="updateModalHeader()"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>Contacto</label><input type="text" id="f-phone" placeholder="ex: 912 345 678"></div>
-          <div class="field"><label>Email</label><input type="text" id="f-email" placeholder="ex: joao@email.com"></div>
-        </div>
-        <div class="field"><label>Estado CrewBrain</label>
-          <select id="f-cb"><option value="none">Não registado</option><option value="confirmed">Confirmado</option><option value="pending">Pendente</option></select>
-        </div>
-        <div class="field"><label>Departamento</label>
-          <select id="f-dept">
-            <option value="0">— Sem departamento</option>
-            <option value="2">Som / Audio</option>
-            <option value="3">Iluminação / Light</option>
-            <option value="4">Vídeo / Video</option>
-            <option value="5">Estruturas</option>
-            <option value="6">Rigging</option>
-            <option value="8">Segurança / Safety</option>
-            <option value="9">Criativo</option>
-            <option value="22">Automatismos</option>
-            <option value="89">Câmara</option>
-            <option value="1">Produção</option>
-            <option value="13">Gestão</option>
-            <option value="15">Direcção</option>
-            <option value="24">Subcontratado</option>
-            <option value="25">IT / Sistemas</option>
-          </select>
-        </div>
+  <div class="modal-section-title">Dados pessoais</div>
+  <div class="field-row">
+    <div class="field"><label>Nome completo</label><input type="text" id="f-name" placeholder="ex: João Silva" oninput="updateModalHeader()"></div>
+    <div class="field"><label>Função principal</label><input type="text" id="f-role" placeholder="ex: Técnico de Som" oninput="updateModalHeader()"></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>Contacto</label><input type="text" id="f-phone" placeholder="ex: 912 345 678"></div>
+    <div class="field"><label>Email</label><input type="text" id="f-email" placeholder="ex: joao@email.com"></div>
+  </div>
+  <div class="field"><label>Estado CrewBrain</label>
+    <select id="f-cb"><option value="none">Não registado</option><option value="confirmed">Confirmado</option><option value="pending">Pendente</option></select>
+  </div>
+  <div class="field"><label>Departamento</label>
+    <select id="f-dept">
+      <option value="0">— Sem departamento</option>
+      <option value="2">Som / Audio</option>
+      <option value="3">Iluminação / Light</option>
+      <option value="4">Vídeo / Video</option>
+      <option value="5">Estruturas</option>
+      <option value="6">Rigging</option>
+      <option value="8">Segurança / Safety</option>
+      <option value="9">Criativo</option>
+      <option value="22">Automatismos</option>
+      <option value="89">Câmara</option>
+      <option value="1">Produção</option>
+      <option value="13">Gestão</option>
+      <option value="15">Direcção</option>
+      <option value="24">Subcontratado</option>
+      <option value="25">IT / Sistemas</option>
+    </select>
+  </div>
       </div>
 
       <!-- Avaliação geral -->
       <div class="modal-section">
-        <div class="modal-section-title">Avaliação geral</div>
-        <div class="star-editor" id="star-editor">
-          <span class="star-edit" onclick="setStar(1)">★</span>
-          <span class="star-edit" onclick="setStar(2)">★</span>
-          <span class="star-edit" onclick="setStar(3)">★</span>
-          <span class="star-edit" onclick="setStar(4)">★</span>
-          <span class="star-edit" onclick="setStar(5)">★</span>
-        </div>
-        <div class="field" style="margin-top:10px"><label>Notas internas do GP</label><textarea id="f-notes" placeholder="Observações sobre o técnico, pontos fortes, situações relevantes..."></textarea></div>
+  <div class="modal-section-title">Avaliação geral</div>
+  <div class="star-editor" id="star-editor">
+    <span class="star-edit" onclick="setStar(1)">★</span>
+    <span class="star-edit" onclick="setStar(2)">★</span>
+    <span class="star-edit" onclick="setStar(3)">★</span>
+    <span class="star-edit" onclick="setStar(4)">★</span>
+    <span class="star-edit" onclick="setStar(5)">★</span>
+  </div>
+  <div class="field" style="margin-top:10px"><label>Notas internas do GP</label><textarea id="f-notes" placeholder="Observações sobre o técnico, pontos fortes, situações relevantes..."></textarea></div>
       </div>
 
       <!-- Competências por área -->
       <div class="modal-section">
-        <div class="modal-section-title">Nível de competência por área (0 = sem experiência, 100 = especialista)</div>
-        <div class="skill-editor">
-          <div class="skill-edit-row"><span class="skill-edit-label">Som</span><input type="range" class="skill-slider" id="sk-som" min="0" max="100" value="0" oninput="updateSkillVal('som',this.value)"><span class="skill-edit-val" id="skv-som">0%</span></div>
-          <div class="skill-edit-row"><span class="skill-edit-label">Luz</span><input type="range" class="skill-slider" id="sk-luz" min="0" max="100" value="0" oninput="updateSkillVal('luz',this.value)"><span class="skill-edit-val" id="skv-luz">0%</span></div>
-          <div class="skill-edit-row"><span class="skill-edit-label">Vídeo</span><input type="range" class="skill-slider" id="sk-video" min="0" max="100" value="0" oninput="updateSkillVal('video',this.value)"><span class="skill-edit-val" id="skv-video">0%</span></div>
-          <div class="skill-edit-row"><span class="skill-edit-label">Automatismos</span><input type="range" class="skill-slider" id="sk-automatismos" min="0" max="100" value="0" oninput="updateSkillVal('automatismos',this.value)"><span class="skill-edit-val" id="skv-automatismos">0%</span></div>
-          <div class="skill-edit-row"><span class="skill-edit-label">Estruturas</span><input type="range" class="skill-slider" id="sk-estruturas" min="0" max="100" value="0" oninput="updateSkillVal('estruturas',this.value)"><span class="skill-edit-val" id="skv-estruturas">0%</span></div>
-          <div class="skill-edit-row"><span class="skill-edit-label">Logística</span><input type="range" class="skill-slider" id="sk-logistica" min="0" max="100" value="0" oninput="updateSkillVal('logistica',this.value)"><span class="skill-edit-val" id="skv-logistica">0%</span></div>
-          <div class="skill-edit-row"><span class="skill-edit-label">Produção</span><input type="range" class="skill-slider" id="sk-producao" min="0" max="100" value="0" oninput="updateSkillVal('producao',this.value)"><span class="skill-edit-val" id="skv-producao">0%</span></div>
-          <div class="skill-edit-row"><span class="skill-edit-label">Criativo</span><input type="range" class="skill-slider" id="sk-criativo" min="0" max="100" value="0" oninput="updateSkillVal('criativo',this.value)"><span class="skill-edit-val" id="skv-criativo">0%</span></div>
-          <div class="skill-edit-row"><span class="skill-edit-label">Segurança</span><input type="range" class="skill-slider" id="sk-seguranca" min="0" max="100" value="0" oninput="updateSkillVal('seguranca',this.value)"><span class="skill-edit-val" id="skv-seguranca">0%</span></div>
-        </div>
+  <div class="modal-section-title">Nível de competência por área (0 = sem experiência, 100 = especialista)</div>
+  <div class="skill-editor">
+    <div class="skill-edit-row"><span class="skill-edit-label">Som</span><input type="range" class="skill-slider" id="sk-som" min="0" max="100" value="0" oninput="updateSkillVal('som',this.value)"><span class="skill-edit-val" id="skv-som">0%</span></div>
+    <div class="skill-edit-row"><span class="skill-edit-label">Luz</span><input type="range" class="skill-slider" id="sk-luz" min="0" max="100" value="0" oninput="updateSkillVal('luz',this.value)"><span class="skill-edit-val" id="skv-luz">0%</span></div>
+    <div class="skill-edit-row"><span class="skill-edit-label">Vídeo</span><input type="range" class="skill-slider" id="sk-video" min="0" max="100" value="0" oninput="updateSkillVal('video',this.value)"><span class="skill-edit-val" id="skv-video">0%</span></div>
+    <div class="skill-edit-row"><span class="skill-edit-label">Automatismos</span><input type="range" class="skill-slider" id="sk-automatismos" min="0" max="100" value="0" oninput="updateSkillVal('automatismos',this.value)"><span class="skill-edit-val" id="skv-automatismos">0%</span></div>
+    <div class="skill-edit-row"><span class="skill-edit-label">Estruturas</span><input type="range" class="skill-slider" id="sk-estruturas" min="0" max="100" value="0" oninput="updateSkillVal('estruturas',this.value)"><span class="skill-edit-val" id="skv-estruturas">0%</span></div>
+    <div class="skill-edit-row"><span class="skill-edit-label">Logística</span><input type="range" class="skill-slider" id="sk-logistica" min="0" max="100" value="0" oninput="updateSkillVal('logistica',this.value)"><span class="skill-edit-val" id="skv-logistica">0%</span></div>
+    <div class="skill-edit-row"><span class="skill-edit-label">Produção</span><input type="range" class="skill-slider" id="sk-producao" min="0" max="100" value="0" oninput="updateSkillVal('producao',this.value)"><span class="skill-edit-val" id="skv-producao">0%</span></div>
+    <div class="skill-edit-row"><span class="skill-edit-label">Criativo</span><input type="range" class="skill-slider" id="sk-criativo" min="0" max="100" value="0" oninput="updateSkillVal('criativo',this.value)"><span class="skill-edit-val" id="skv-criativo">0%</span></div>
+    <div class="skill-edit-row"><span class="skill-edit-label">Segurança</span><input type="range" class="skill-slider" id="sk-seguranca" min="0" max="100" value="0" oninput="updateSkillVal('seguranca',this.value)"><span class="skill-edit-val" id="skv-seguranca">0%</span></div>
+  </div>
       </div>
 
       <!-- Equipamentos -->
       <div class="modal-section">
-        <div class="modal-section-title">Equipamentos que opera (amarelo = área principal)</div>
-        <div class="equip-editor" id="equip-editor"></div>
+  <div class="modal-section-title">Equipamentos que opera (amarelo = área principal)</div>
+  <div class="equip-editor" id="equip-editor"></div>
       </div>
 
       <!-- Adicionar equipamento personalizado -->
       <div class="equip-add-wrap">
-        <input class="equip-add-input" type="text" id="custom-equip-input" placeholder="Novo equipamento/função...">
-        <select class="equip-area-select" id="custom-equip-area">
-          <option value="">-- Área --</option>
-        </select>
-        <button class="equip-add-btn" onclick="addCustomEquip()">+ Adicionar</button>
+  <input class="equip-add-input" type="text" id="custom-equip-input" placeholder="Novo equipamento/função...">
+  <select class="equip-area-select" id="custom-equip-area">
+    <option value="">-- Área --</option>
+  </select>
+  <button class="equip-add-btn" onclick="addCustomEquip()">+ Adicionar</button>
       </div>
       </div>
 
       <!-- Gerir categorias personalizadas -->
       <div class="modal-section" id="cat-manager-section" style="display:none">
-        <div class="modal-section-title">Categorias personalizadas</div>
-        <div class="cat-manager">
-          <div class="cat-manager-title">Adicionar nova categoria de competência</div>
-          <div class="cat-row">
-            <input class="cat-input" type="text" id="new-cat-id" placeholder="ID (sem espaços, ex: automacao)">
-            <input class="cat-input" type="text" id="new-cat-label" placeholder="Nome (ex: Automação)">
-            <input class="cat-color-pick" type="color" id="new-cat-color" value="#6B35B8">
-            <button class="cat-add-btn" onclick="addCustomCategory()">+ Categoria</button>
-          </div>
-          <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:6px">Categorias personalizadas:</div>
-          <div class="cert-list" id="custom-cat-list" style="margin-top:6px"></div>
-        </div>
+  <div class="modal-section-title">Categorias personalizadas</div>
+  <div class="cat-manager">
+    <div class="cat-manager-title">Adicionar nova categoria de competência</div>
+    <div class="cat-row">
+      <input class="cat-input" type="text" id="new-cat-id" placeholder="ID (sem espaços, ex: automacao)">
+      <input class="cat-input" type="text" id="new-cat-label" placeholder="Nome (ex: Automação)">
+      <input class="cat-color-pick" type="color" id="new-cat-color" value="#6B35B8">
+      <button class="cat-add-btn" onclick="addCustomCategory()">+ Categoria</button>
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:6px">Categorias personalizadas:</div>
+    <div class="cert-list" id="custom-cat-list" style="margin-top:6px"></div>
+  </div>
       </div>
 
       <!-- Certificações -->
       <div class="modal-section">
-        <div class="modal-section-title">Certificações e formações</div>
-        <div class="cert-input-wrap">
-          <input class="cert-input" type="text" id="cert-input" placeholder="ex: Dante Level 3, Trabalho em Altura, EPI..." onkeydown="if(event.key==='Enter')addCert()">
-          <button class="cert-add-btn" onclick="addCert()">+ Adicionar</button>
-        </div>
-        <div class="cert-list" id="cert-list"></div>
+  <div class="modal-section-title">Certificações e formações</div>
+  <div class="cert-input-wrap">
+    <input class="cert-input" type="text" id="cert-input" placeholder="ex: Dante Level 3, Trabalho em Altura, EPI..." onkeydown="if(event.key==='Enter')addCert()">
+    <button class="cert-add-btn" onclick="addCert()">+ Adicionar</button>
+  </div>
+  <div class="cert-list" id="cert-list"></div>
       </div>
 
       <!-- Acções inline no fim do formulário -->
       <div style="display:flex;flex-direction:column;gap:8px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
-        <button class="btn-save" onclick="saveTecnico()" style="width:100%;padding:12px;font-size:14px">Guardar perfil</button>
-        <div style="display:flex;gap:8px">
-          <button class="btn-cancel" onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()" style="flex:1">Cancelar</button>
-          <button id="btn-delete-inline" onclick="deleteTecnico()" style="display:none;flex:1;padding:10px 16px;background:none;border:1px solid rgba(192,57,43,0.25);border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--red);cursor:pointer;transition:all 0.15s">Eliminar perfil</button>
-        </div>
-        <button class="btn-cancel" onclick="window.toggleCatManager && window.toggleCatManager()" id="btn-cat-manager-inline" style="font-size:10px;padding:6px 12px;width:100%">⊕ Gerir categorias</button>
+  <button class="btn-save" onclick="saveTecnico()" style="width:100%;padding:12px;font-size:14px">Guardar perfil</button>
+  <div style="display:flex;gap:8px">
+    <button class="btn-cancel" onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()" style="flex:1">Cancelar</button>
+    <button id="btn-delete-inline" onclick="deleteTecnico()" style="display:none;flex:1;padding:10px 16px;background:none;border:1px solid rgba(192,57,43,0.25);border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--red);cursor:pointer;transition:all 0.15s">Eliminar perfil</button>
+  </div>
+  <button class="btn-cancel" onclick="window.toggleCatManager && window.toggleCatManager()" id="btn-cat-manager-inline" style="font-size:10px;padding:6px 12px;width:100%">⊕ Gerir categorias</button>
       </div>
 
     </div>
     <div class="modal-footer" style="display:none"><!-- footer hidden, actions moved inline -->" style="flex-direction:column;gap:10px">
       <button class="btn-save" onclick="saveTecnico()" style="width:100%;padding:12px">Guardar perfil</button>
       <div style="display:flex;gap:8px">
-        <button class="btn-cancel" onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()" style="flex:1">Cancelar</button>
-        <button class="btn-delete-eq" id="btn-delete" onclick="deleteTecnico()" style="display:none;flex:1;padding:8px 16px;border:1px solid rgba(192,57,43,0.25);border-radius:8px;text-decoration:none;color:var(--red)">Eliminar</button>
+  <button class="btn-cancel" onclick="if(typeof closeModalEq==='function')closeModalEq();else closeModal()" style="flex:1">Cancelar</button>
+  <button class="btn-delete-eq" id="btn-delete" onclick="deleteTecnico()" style="display:none;flex:1;padding:8px 16px;border:1px solid rgba(192,57,43,0.25);border-radius:8px;text-decoration:none;color:var(--red)">Eliminar</button>
       </div>
       <button class="btn-cancel" onclick="window.toggleCatManager && window.toggleCatManager()" id="btn-cat-manager" style="font-size:10px;padding:6px 12px;width:100%">⊕ Gerir categorias</button>
     </div>
@@ -2918,8 +2922,8 @@ function renderGrid() {
 
 // ── DEPT COLOUR MAP ───────────────────────────────────────────────────────────
 const DEPT_COLORS = {
-  2:  { bg: '#0D1B2A', text: '#5B9BD5', label: 'Som' },        // Som - Azul Escuro
-  3:  { bg: '#003D40', text: '#00E5CC', label: 'Luz' },        // Iluminação - Turquesa
+  2:  { bg: '#0D1B2A', text: '#5B9BD5', label: 'Som' },  // Som - Azul Escuro
+  3:  { bg: '#003D40', text: '#00E5CC', label: 'Luz' },  // Iluminação - Turquesa
   4:  { bg: '#1E0A3C', text: '#B388FF', label: 'Vídeo' },      // Vídeo - Roxo
   5:  { bg: '#2A2A2A', text: '#AAAAAA', label: 'Estruturas' }, // Estruturas - Cinza
   6:  { bg: '#2A2A2A', text: '#AAAAAA', label: 'Rigging' },    // Rigging - Cinza
@@ -2927,7 +2931,7 @@ const DEPT_COLORS = {
   9:  { bg: '#3D1A0A', text: '#FF7A50', label: 'Criativo' },   // Criativo - Laranja Coral
   16: { bg: '#1E0A3C', text: '#B388FF', label: 'Vídeo' },      // Vídeo 2 - Roxo
   17: { bg: '#1E0A3C', text: '#B388FF', label: 'Vídeo' },      // Vídeo 3 - Roxo
-  18: { bg: '#003D40', text: '#00E5CC', label: 'Luz' },        // Luz 2 - Turquesa
+  18: { bg: '#003D40', text: '#00E5CC', label: 'Luz' },  // Luz 2 - Turquesa
   19: { bg: '#2A2A2A', text: '#AAAAAA', label: 'Estruturas' }, // Estruturas 2 - Cinza
   22: { bg: '#3D3200', text: '#F2C200', label: 'Automatismos' }, // Automatismos - Amarelo
   23: { bg: '#2A2A2A', text: '#AAAAAA', label: 'Estruturas' }, // Estruturas 3 - Cinza
@@ -2995,14 +2999,14 @@ function tecnicoCard(t) {
     <div style="padding:14px 16px;display:flex;align-items:flex-start;gap:12px;background:${deptClr.bg};border-radius:12px 12px 0 0">
       <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;font-size:14px;flex-shrink:0;background:${avatarBg};color:${deptClr.text}">${initials}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-family:var(--sans);font-size:14px;font-weight:700;color:${nameColor};line-height:1.25;margin-bottom:2px">${t.name}</div>
-        ${t.role ? `<div style="font-family:var(--mono);font-size:10px;color:${deptClr.text};letter-spacing:0.03em;margin-bottom:2px;opacity:0.85">${t.role}</div>` : ''}
-        ${t.phone ? `<div style="font-family:var(--mono);font-size:10px;color:${phoneColor}">${t.phone}</div>` : ''}
+  <div style="font-family:var(--sans);font-size:14px;font-weight:700;color:${nameColor};line-height:1.25;margin-bottom:2px">${t.name}</div>
+  ${t.role ? `<div style="font-family:var(--mono);font-size:10px;color:${deptClr.text};letter-spacing:0.03em;margin-bottom:2px;opacity:0.85">${t.role}</div>` : ''}
+  ${t.phone ? `<div style="font-family:var(--mono);font-size:10px;color:${phoneColor}">${t.phone}</div>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-        <div style="display:flex;gap:2px">${starsHtml}</div>
-        ${cbLabel ? `<span style="font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;background:${badgeBg};color:${badgeColor}">${cbLabel}</span>` : ''}
-        ${t.needsEvaluation ? `<span style="font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(242,194,0,0.25);color:#c8a000">avaliar</span>` : ''}
+  <div style="display:flex;gap:2px">${starsHtml}</div>
+  ${cbLabel ? `<span style="font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;background:${badgeBg};color:${badgeColor}">${cbLabel}</span>` : ''}
+  ${t.needsEvaluation ? `<span style="font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(242,194,0,0.25);color:#c8a000">avaliar</span>` : ''}
       </div>
     </div>
 
@@ -3240,9 +3244,9 @@ function renderCustomCatList() {
     ? '<span style="font-family:var(--mono);font-size:10px;color:var(--dim)">Nenhuma categoria personalizada ainda.</span>'
     : customCategories.map(c => `
       <div class="cat-tag" style="background:${c.color}22;border:1px solid ${c.color}55">
-        <span style="color:${c.color};font-weight:500">${c.label}</span>
-        <span style="font-family:var(--mono);font-size:9px;color:${c.color}88"> (${c.id})</span>
-        <button onclick="removeCustomCategory('${c.id}')" style="color:${c.color}">×</button>
+  <span style="color:${c.color};font-weight:500">${c.label}</span>
+  <span style="font-family:var(--mono);font-size:9px;color:${c.color}88"> (${c.id})</span>
+  <button onclick="removeCustomCategory('${c.id}')" style="color:${c.color}">×</button>
       </div>`).join('');
 }
 
@@ -3423,11 +3427,11 @@ function saveCBConfig() {
   syncNow().then(function() {
     setTimeout(function() {
       if (confirm('Sync concluído!\nQueres apagar as credenciais por segurança?\n(Os dados ficam guardados na plataforma)')) {
-        localStorage.removeItem(CB_AUTH_KEY);
-        localStorage.removeItem(CB_URL_KEY);
-        localStorage.removeItem(CB_EVENTID_KEY);
-        notify('✓ Credenciais apagadas — técnicos guardados localmente');
-        setCBStatus('ok', 'CrewBrain · sync guardado');
+  localStorage.removeItem(CB_AUTH_KEY);
+  localStorage.removeItem(CB_URL_KEY);
+  localStorage.removeItem(CB_EVENTID_KEY);
+  notify('✓ Credenciais apagadas — técnicos guardados localmente');
+  setCBStatus('ok', 'CrewBrain · sync guardado');
       }
     }, 2000);
   }).catch(function(){});
@@ -3545,21 +3549,21 @@ function mergeWithLocalProfiles(cbStaff) {
     } else {
       // New person from CrewBrain — create profile with empty evaluations
       const newProfile = {
-        id: Date.now() + Math.random(),
-        cbId: cbPerson.cbId,
-        name: cbPerson.name,
-        role: cbPerson.role,
-        phone: cbPerson.phone,
-        email: cbPerson.email,
-        cb: cbPerson.cb,
-        stars: 0,
-        notes: '',
-        skills: {},
-        equip: [],
-        equipMain: [],
-        certs: [],
-        fromCB: true,
-        needsEvaluation: true,
+  id: Date.now() + Math.random(),
+  cbId: cbPerson.cbId,
+  name: cbPerson.name,
+  role: cbPerson.role,
+  phone: cbPerson.phone,
+  email: cbPerson.email,
+  cb: cbPerson.cb,
+  stars: 0,
+  notes: '',
+  skills: {},
+  equip: [],
+  equipMain: [],
+  certs: [],
+  fromCB: true,
+  needsEvaluation: true,
       };
       AREAS.forEach(a => { newProfile.skills[a] = 0; });
       tecnicos.push(newProfile);
@@ -3609,24 +3613,24 @@ function renderEquipa() {
   c.innerHTML = `
     <div style="padding:24px;overflow-y:auto;height:100%">
       <div id="cb-sync-status-eq" onclick="showCBConfig()" style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:16px">
-        <div id="cb-dot" style="width:6px;height:6px;border-radius:50%;background:var(--dim)"></div>
-        <span id="cb-label">CrewBrain</span>
-        <button onclick="event.stopPropagation();syncNow()" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-family:var(--mono);font-size:9px;color:var(--dim);cursor:pointer;margin-left:4px">↻ Sync</button>
-        <button onclick="event.stopPropagation();openModal()" style="background:var(--y);border:none;border-radius:5px;padding:2px 10px;font-family:var(--sans);font-size:11px;font-weight:700;color:#111;cursor:pointer;margin-left:4px">+ Técnico</button>
+  <div id="cb-dot" style="width:6px;height:6px;border-radius:50%;background:var(--dim)"></div>
+  <span id="cb-label">CrewBrain</span>
+  <button onclick="event.stopPropagation();syncNow()" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-family:var(--mono);font-size:9px;color:var(--dim);cursor:pointer;margin-left:4px">↻ Sync</button>
+  <button onclick="event.stopPropagation();openModal()" style="background:var(--y);border:none;border-radius:5px;padding:2px 10px;font-family:var(--sans);font-size:11px;font-weight:700;color:#111;cursor:pointer;margin-left:4px">+ Técnico</button>
       </div>
       <div class="stats-bar-eq" id="stats-bar-eq" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px"></div>
       <div class="filters" id="eq-filters" style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center">
-        <div class="filter-pill active" onclick="setFilter('todos',this)">Todos</div>
-        <div class="filter-pill" onclick="setFilter('som',this)">Som</div>
-        <div class="filter-pill" onclick="setFilter('luz',this)">Luz</div>
-        <div class="filter-pill" onclick="setFilter('video',this)">Vídeo</div>
-        <div class="filter-pill" onclick="setFilter('automatismos',this)">Automatismos</div>
-        <div class="filter-pill" onclick="setFilter('estruturas',this)">Estruturas</div>
-        <div class="filter-pill" onclick="setFilter('producao',this)">Produção</div>
-        <div class="filter-pill" onclick="setFilter('seguranca',this)">Segurança</div>
-        <div class="filter-pill" onclick="setFilter('senior',this)">Sénior</div>
-        <div class="filter-pill" onclick="setFilter('avaliar',this)">Por avaliar</div>
-        <input class="search-input-eq" id="search" type="text" placeholder="Pesquisar..." oninput="renderGrid()">
+  <div class="filter-pill active" onclick="setFilter('todos',this)">Todos</div>
+  <div class="filter-pill" onclick="setFilter('som',this)">Som</div>
+  <div class="filter-pill" onclick="setFilter('luz',this)">Luz</div>
+  <div class="filter-pill" onclick="setFilter('video',this)">Vídeo</div>
+  <div class="filter-pill" onclick="setFilter('automatismos',this)">Automatismos</div>
+  <div class="filter-pill" onclick="setFilter('estruturas',this)">Estruturas</div>
+  <div class="filter-pill" onclick="setFilter('producao',this)">Produção</div>
+  <div class="filter-pill" onclick="setFilter('seguranca',this)">Segurança</div>
+  <div class="filter-pill" onclick="setFilter('senior',this)">Sénior</div>
+  <div class="filter-pill" onclick="setFilter('avaliar',this)">Por avaliar</div>
+  <input class="search-input-eq" id="search" type="text" placeholder="Pesquisar..." oninput="renderGrid()">
       </div>
       <div class="tecnico-grid" id="tecnico-grid"></div>
     </div>
@@ -3688,4 +3692,26 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 </body>
-</html>
+</html>};
+
+window.importEquipaExcel = function(projectId) {
+  var input = document.getElementById('excel-import-input');
+  if (!input) return;
+  input.value = '';
+  window._importPid = projectId;
+  input.onchange = function(e) {
+    var pid = window._importPid || projectId;
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var data = new Uint8Array(ev.target.result);
+        var wb = XLSX.read(data, {type: 'array'});
+        var ws = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
+        window._processExcelRows(rows, pid);
+      } catch(err) {
+        notify('Erro ao ler ficheiro: ' + err.message);
+      }
+    
