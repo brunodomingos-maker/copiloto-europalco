@@ -721,6 +721,15 @@ function showSetup() {
   document.getElementById('screen-setup').classList.remove('hidden');
 }
 
+// ── SCREEN NAVIGATION ─────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) {
+    s.classList.add('hidden');
+  });
+  var target = document.getElementById('screen-' + id);
+  if (target) target.classList.remove('hidden');
+}
+
 // ── TIMELINE ──────────────────────────────────────────────────────────────────
 function parseTimeline() {
   timelineItems = [];
