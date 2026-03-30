@@ -316,12 +316,12 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   .cp-send { padding:7px 12px; background:var(--y); border:none; border-radius:7px; font-family:var(--sans); font-size:13px; font-weight:700; color:#111; cursor:pointer; }
 
 /* ── EQUIPA TÉCNICA ── */
-.tecnico-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.tecnico-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; grid-auto-rows: 1fr; }
 .tecnico-card { cursor: pointer; }
-.tecnico-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.15s; }
+.tecnico-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.15s; display: flex; flex-direction: column; height: 100%; }
 .tecnico-card:hover { border-color: var(--ym); box-shadow: 0 2px 12px rgba(242,194,0,0.08); }
 .avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--sans); font-weight: 700; font-size: 16px; color: #111; flex-shrink: 0; }
-.card-skills { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+.card-skills { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .skill-row { display: flex; align-items: center; gap: 8px; }
 .skill-label { font-family: var(--mono); font-size: 9px; color: var(--dim); width: 72px; flex-shrink: 0; letter-spacing: 0.04em; text-transform: uppercase; }
 .skill-bar { flex: 1; height: 5px; background: var(--bg); border-radius: 3px; overflow: hidden; }
