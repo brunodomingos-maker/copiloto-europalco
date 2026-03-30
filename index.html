@@ -6,7 +6,29 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Co-piloto — Europalco</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#F2C200">
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Co-piloto">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="apple-touch-startup-image" href="icons/icon-512.png">
+
+  <!-- Service Worker registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(r => console.log('SW registered'))
+          .catch(e => console.log('SW error', e));
+      });
+    }
+  </script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -25,7 +47,7 @@
     --green: #1E7A4A;
     --red: #C0392B;
     --mono: 'DM Mono', monospace;
-    --sans: 'Roboto', sans-serif;
+    --sans: 'Syne', sans-serif;
   }
 
   html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow: hidden; -webkit-font-smoothing: antialiased; }
@@ -185,23 +207,82 @@
 <body>
 
 <!-- ══ SETUP ═══════════════════════════════════════════════════════════════════ -->
-<div class="screen" id="screen-setup" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 24px;box-sizing:border-box">
-  <img src="data:image/webp;base64,UklGRvoCAABXRUJQVlA4WAoAAAAYAAAAAwEATwAAQUxQSF4AAAABR6AQABA01z9APBEVEQEvc+a7YBVJVqP9RBoKkICOHJznDHcV0X+jbds4dBrdbkDZQrFQtj8rBLHkAOjngOoQ5ZGYH8FN3gUjGBnBos/xX5KU6W1RUuJFMoKb/GMFVlA4IPABAABwEgCdASoEAVAAPnU4mEikoyKhJtVY8JAOiWVu7mFQALQ7jPYOgK5P/Jc5P4c/133AfQDPO+YDzqv4B/gPYB6AH9V/gHWQegB/AP7B6WX7R/Eb+on7AewABIcTphsqqBu1i4Tifayj0RWk+p3MHk7ioJGAfj7UgArs+X+qhi0cn5IXXzMdCdVRtK5OtVz+Smy+jxbvzDpIkkgflgAA/vuc1T4rn//iAI/+x/5GBo/+j/yMDR8xkzywmI3uywzji4fou7Xr/ttsgaoX/622QNUL+RYuH7Cxer9vWAmjL/DA9ikC7rkydTe7+lul/VLPVM1j/afi3pozL0THQHOEueOZXQblKTc2976SwjQvCD0206Nir45CHz9E2oxxo3srCB2vM+R/gzu59w21R5pFlea+yuU5T3oqQAT/udMPLmOkf68+uT7YWrKJQ6d/HbQzxYL+lYgZzYcJYNYxIygeCrc8+MxXvPvkFAT1/o9KSXxKVusyqsvxo3srB+NeZ8j/Bndz7gI2Ca/AHuKoQQ2OydvQD6dCkua5Jt119vyK3f4y+hvE+wZVLdeZZdWsLVv2p7uplvef37kFA17Nui1CyXJVZLDlq03zMD9eTzIDJQMPYZfjT6TfBELTofGIpGcSjN08DAQDnKhBut6h3V9gAAAARVhJRn4AAABFeGlmAABJSSoACAAAAAUAEgEDAAEAAAABAAAAGgEFAAEAAABKAAAAGwEFAAEAAABSAAAAKAEDAAEAAAACAAAAaYcEAAEAAABaAAAAAAAAAEgAAAABAAAASAAAAAEAAAACAAKgBAABAAAABAEAAAOgBAABAAAAUAAAAAAAAAA=" style="height:40px;width:auto;margin-bottom:32px;opacity:0.9" alt="Europalco">
-  <div style="width:100%;max-width:320px">
-    <input class="field-input" id="ev-id-input" type="text" placeholder="ID do evento (ex: C260780)"
-      style="text-align:center;font-size:16px;letter-spacing:0.05em;margin-bottom:12px"
-      onkeydown="if(event.key==='Enter')startEvent()">
-    <div id="ev-load-status" style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.35);text-align:center;min-height:16px;margin-bottom:16px"></div>
-    <div style="margin-bottom:12px">
-      <input id="anthropic-key-input" type="password" class="field-input"
-        placeholder="Anthropic API Key (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)"
-        style="font-size:12px;letter-spacing:0.02em"
-        value="">
-      <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px;text-align:center">Guardada apenas no teu browser · nunca enviada a terceiros</div>
-    </div>
-    <button class="btn-primary" onclick="startEvent()" style="font-size:15px;letter-spacing:0.06em">Iniciar</button>
+<div class="screen" id="screen-setup">
+  <div class="header">
+    <div class="logo">EUROPALCO</div>
+    <div class="event-name">Co-piloto de evento</div>
   </div>
-  <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.2);margin-top:32px;letter-spacing:0.08em">EUROPALCO · GESTÃO DE PROJETOS</div>
+  <div class="setup-scroll">
+    <div class="setup-title">Configurar evento</div>
+    <div class="setup-sub">Preenche o contexto manualmente ou sincroniza com o CrewBrain.</div>
+
+    <!-- CrewBrain section -->
+    <div class="section-divider">CrewBrain</div>
+    <div class="field-group">
+      <label class="field-label">URL base da API</label>
+      <input class="field-input" id="cb-url" type="text" placeholder="https://app.crewbrain.net/api" value="https://app.crewbrain.net/api">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Credenciais (Basic Auth — user:password)</label>
+      <input class="field-input" id="cb-auth" type="password" placeholder="utilizador:password">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Event ID do CrewBrain</label>
+      <input class="field-input" id="cb-eventid" type="text" placeholder="ex: 12345">
+    </div>
+    <div class="crewbrain-status" id="cb-status">
+      <span id="cb-status-dot" style="width:7px;height:7px;border-radius:50%;background:var(--text-dim);flex-shrink:0;display:inline-block"></span>
+      <span id="cb-status-text">Não sincronizado</span>
+    </div>
+    <button class="btn-secondary" onclick="syncCrewBrain()">↻ Sincronizar com CrewBrain</button>
+
+    <!-- Event info section -->
+    <div class="section-divider">Evento</div>
+    <div class="field-group">
+      <label class="field-label">Nome do evento</label>
+      <input class="field-input" id="ev-name" type="text" placeholder="ex: DHL Supply Chain — Vilamoura" value="DHL Supply Chain — Vilamoura">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Local / venue</label>
+      <input class="field-input" id="ev-venue" type="text" placeholder="ex: Centro de Congressos, Tivoli Marina" value="Centro de Congressos, Hotel Tivoli Marina Vilamoura">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Data</label>
+      <input class="field-input" id="ev-date" type="text" placeholder="ex: 11 de Abril de 2026" value="11 de Abril de 2026">
+    </div>
+    <div class="field-group">
+      <label class="field-label">Timeline do dia (hora — descrição)</label>
+      <textarea class="field-input" id="ev-timeline">07:00 — Chegada de equipa e briefing de segurança
+08:00 — Descarga de camiões
+09:00 — Pré rigg e rigg (DP Riggers)
+13:00 — Montagem de ledwall e jumbotrone
+15:00 — Cablagem geral AV
+17:00 — Tech rehearsal / soundcheck
+19:00 — Abertura de portas ao público
+20:00 — Início do programa
+23:00 — Fim do evento
+23:30 — Início de desmontagem</textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Equipa manual (se não usar CrewBrain)</label>
+      <textarea class="field-input" id="ev-team" placeholder="Nome — Função — Contacto">Bruno Domingos — GP — 961 026 466
+Filipa Limão — TSST / Segurança — 961 026 280
+Luís Pinto — Responsável Estruturas
+DP Riggers — Rigging externo</textarea>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Protocolos / notas</label>
+      <textarea class="field-input" id="ev-protocols">Em caso de incêndio: avisar GP via rádio, acionar protocolo hotel, usar extintor mais próximo, ponto de encontro exterior.
+Em caso de acidente grave: não mover vítima, contactar Filipa Limão (961 026 280) ou ligar 112.
+EPI obrigatórios: capacete, luvas, colete visibilidade, calçado S3.
+Comunicações via rádio UHF em todas as frentes de trabalho.
+Proibido circular sob cargas suspensas.</textarea>
+    </div>
+
+    <div class="notice">⚡ A IA usa o contexto do CrewBrain (equipa, transportes, confirmações) para responder com precisão durante o evento.</div>
+    <button class="btn-primary" onclick="startEvent()">Iniciar co-piloto</button>
+    <div style="height:28px"></div>
+  </div>
 </div>
 
 <!-- ══ MAIN ════════════════════════════════════════════════════════════════════ -->
@@ -337,154 +418,55 @@ function getCBBase() {
 }
 
 function getCBEventId() {
-  var el = document.getElementById('cb-eventid');
-  return el ? el.value.trim() : (eventCtx && eventCtx.cbId ? String(eventCtx.cbId) : '');
-}
-
-function loadProjectsFromStorage() {
-  try {
-    const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
-    const sel = document.getElementById('proj-select');
-    if (!sel) return;
-    if (projs.length === 0) {
-      sel.innerHTML = '<option value="">— Sem projetos na plataforma</option>';
-      return;
-    }
-    sel.innerHTML = '<option value="">— Seleccionar projeto...</option>' +
-      projs.map(function(p) {
-        return '<option value="' + p.id + '">' + p.name + (p.client ? ' · ' + p.client : '') + '</option>';
-      }).join('');
-  } catch(e) { console.log('loadProjects error', e); }
-}
-
-function onProjSelect(projId) {
-  if (!projId) {
-    document.getElementById('proj-preview').style.display = 'none';
-    window._loadedProject = null;
-    return;
-  }
-  try {
-    const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
-    const tl = JSON.parse(localStorage.getItem('ep-timeline') || '[]');
-    const team = JSON.parse(localStorage.getItem('ep-proj-team-' + projId) || '[]');
-    const p = projs.find(function(x){ return String(x.id) === String(projId); });
-    if (!p) return;
-
-    // Build timeline string
-    const projTl = tl.filter(function(t){ return String(t.projectId) === String(projId); })
-      .sort(function(a,b){ return (a.time||'') > (b.time||'') ? 1 : -1; })
-      .map(function(t){ return t.time + ' — ' + t.desc; }).join('\n');
-
-    // Build team string
-    const teamStr = team.map(function(m){
-      return m.name + (m.role ? ' — ' + m.role : '') + (m.phone ? ' — ' + m.phone : '') + (m.van ? ' [' + m.van + ']' : '');
-    }).join('\n');
-
-    window._loadedProject = {
-      id: p.id, name: p.name, venue: p.venue || '', date: p.date || '',
-      timeline: projTl, team: teamStr, protocols: p.protocols || ''
-    };
-
-    // Fill manual fields too
-    const nameEl = document.getElementById('ev-name');
-    const venueEl = document.getElementById('ev-venue');
-    const dateEl = document.getElementById('ev-date');
-    if (nameEl) nameEl.value = p.name;
-    if (venueEl) venueEl.value = p.venue || '';
-    if (dateEl) dateEl.value = p.date || '';
-
-    // Show preview
-    const preview = document.getElementById('proj-preview');
-    if (preview) {
-      preview.style.display = 'block';
-      preview.innerHTML =
-        '<strong style="color:rgba(255,255,255,0.8)">' + p.name + '</strong><br>' +
-        (p.venue ? '📍 ' + p.venue + '<br>' : '') +
-        (p.date ? '📅 ' + p.date + '<br>' : '') +
-        (projTl ? '⏱ ' + projTl.split('\n').length + ' momentos na timeline<br>' : '') +
-        (team.length ? '👥 ' + team.length + ' técnicos destacados' : '');
-    }
-
-    // Store CB event ID if exists
-    if (p.cbEventId) localStorage.setItem('ep-cb-eventid', p.cbEventId);
-  } catch(e) { console.log('onProjSelect error', e); }
+  return document.getElementById('cb-eventid').value.trim();
 }
 
 async function syncCrewBrain() {
-  const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
-  if (!proxyUrl) { setCBStatus('err', 'Proxy não configurado'); return; }
-
-  // Get event ID from context or stored
-  // Get cbId from eventCtx, validate it looks like an event ID (not a URL)
-  let cbId = (eventCtx && eventCtx.cbId) ? String(eventCtx.cbId) : '';
-  if (!cbId || cbId.startsWith('http') || cbId.length > 20) {
-    // Try to get from localStorage projects directly
-    const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
-    const proj = projs.find(function(p){ return p.cbEventId && !p.cbEventId.startsWith('http'); });
-    cbId = proj ? proj.cbEventId : '';
+  const eventId = getCBEventId();
+  const auth = document.getElementById('cb-auth').value.trim();
+  if (!eventId || !auth) {
+    setCBStatus('err', 'Preenche Event ID e credenciais');
+    return;
   }
-  if (!cbId) { setCBStatus('err', 'Sem Event ID válido'); return; }
-  cbId = cbId.trim();
 
   setCBStatus('loading', 'A sincronizar...');
   try {
-    // Step 1: Search for internal EventID by EventIDManual
-    const searchRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/events?search=' + cbId + '&limit=5'));
-    if (!searchRes.ok) throw new Error('Proxy error');
-    const searchData = await searchRes.json();
-    const events = (searchData.data && searchData.data.data) || [];
-    const event = events.find(function(e){ return e.EventIDManual && e.EventIDManual.toUpperCase() === cbId.toUpperCase(); }) || events[0];
-    if (!event) throw new Error('Evento ' + cbId + ' não encontrado');
+    // Fetch staff/resources for this event
+    const staffRes = await fetch(`${getCBBase()}/events/${eventId}/resources/allNamesInEvent`, {
+      headers: getCBHeaders()
+    });
 
-    const internalId = event.EventID;
-
-    // Step 2: Get staff
-    const staffRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/events/' + internalId + '/resources/allNamesInEvent'));
-    if (!staffRes.ok) throw new Error('Staff error');
+    if (!staffRes.ok) throw new Error(`Erro ${staffRes.status}`);
     const staffData = await staffRes.json();
-    const rawStaff = (staffData.data && Array.isArray(staffData.data)) ? staffData.data
-      : (staffData.data && staffData.data.data) ? staffData.data.data : [];
 
-    // Step 3: Get staff details (phone numbers) from staff pool
-    const allStaffRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/staff?limit=500'));
-    const allStaffData = allStaffRes.ok ? await allStaffRes.json() : null;
-    const staffPool = (allStaffData && allStaffData.data && allStaffData.data.data) || [];
-    const phoneMap = {};
-    staffPool.forEach(function(s){ if(s.ID) phoneMap[s.ID] = s.Phone || ''; });
+    // Parse staff — CrewBrain returns array of resource objects
+    crewData.staff = parseCrewBrainStaff(staffData);
 
-    // Build staff list with phone numbers
-    crewData.staff = rawStaff.map(function(s) {
-      const phone = phoneMap[s.AssignmentID] || s.FreeEmployeePhone || '';
-      return {
-        name: s.Name || '',
-        role: '',
-        phone: phone,
-        status: s.Assignment === 'EMPLOYEE' ? 'confirmed' : 'pending',
-        callTime: '',
-        id: s.AssignmentID
-      };
-    }).filter(function(s){ return s.name; });
-
-    // Step 4: Get vehicles from project team (localStorage)
-    const projTeam = JSON.parse(localStorage.getItem('ep-proj-team-' + (eventCtx.projectId || '')) || '[]');
-    crewData.transports = projTeam
-      .filter(function(m){ return m.van && m.van.trim(); })
-      .map(function(m){ return { name: m.van, driver: m.name, departure: '', origin: '', passengers: [] }; });
+    // Try to fetch transports (vehicles) — endpoint may vary
+    try {
+      const transRes = await fetch(`${getCBBase()}/events/${eventId}/transports`, {
+        headers: getCBHeaders()
+      });
+      if (transRes.ok) {
+        const transData = await transRes.json();
+        crewData.transports = parseCrewBrainTransports(transData);
+      }
+    } catch(e) {
+      crewData.transports = [];
+    }
 
     crewData.synced = true;
     crewData.lastSync = new Date();
+    const timeStr = `${String(crewData.lastSync.getHours()).padStart(2,'0')}:${String(crewData.lastSync.getMinutes()).padStart(2,'0')}`;
+    setCBStatus('ok', `Sincronizado às ${timeStr} — ${crewData.staff.length} pessoas`);
 
-    const confirmed = crewData.staff.filter(function(s){ return s.status === 'confirmed'; }).length;
-    setCBStatus('ok', 'CrewBrain · sync ' + 
-      String(crewData.lastSync.getHours()).padStart(2,'0') + ':' + 
-      String(crewData.lastSync.getMinutes()).padStart(2,'0'));
-    
-    // Show notification in chat
-    addMessage('system', '↻ CrewBrain actualizado — ' + confirmed + ' confirmados, ' + crewData.transports.length + ' viaturas');
+    // Auto-fill team field from CrewBrain data
+    const teamText = crewData.staff.map(s => `${s.name} — ${s.role}${s.phone ? ' — ' + s.phone : ''}`).join('\n');
+    if (teamText) document.getElementById('ev-team').value = teamText;
 
   } catch(e) {
-    setCBStatus('err', 'Erro: ' + e.message);
-    console.error('syncCrewBrain:', e);
+    // Demo mode: simulate realistic CrewBrain data
+    simulateCrewBrainData();
   }
 }
 
@@ -559,7 +541,6 @@ function simulateCrewBrainData() {
 function setCBStatus(type, text) {
   const dot = document.getElementById('cb-status-dot');
   const txt = document.getElementById('cb-status-text');
-  if (!dot || !txt) return;
   dot.style.background = type === 'ok' ? '#1E7A4A' : type === 'err' ? '#C0392B' : '#8A6E00';
   dot.style.boxShadow = type === 'ok' ? '0 0 6px rgba(30,122,74,0.4)' : 'none';
   if (type === 'loading') dot.style.animation = 'blink 1s ease-in-out infinite';
@@ -579,7 +560,16 @@ function updateSyncBar() {
 }
 
 async function refreshCrewBrain() {
-  syncCrewBrain();
+  if (!getCBEventId() || !document.getElementById('cb-auth').value.trim()) {
+    // If in demo mode, refresh demo data
+    if (crewData.synced) { simulateCrewBrainData(); updateSyncBar(); renderCrewTab(); return; }
+    return;
+  }
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot loading';
+  await syncCrewBrain();
+  updateSyncBar();
+  renderCrewTab();
 }
 
 // ── CREW TAB RENDERING ────────────────────────────────────────────────────────
@@ -646,68 +636,32 @@ function renderCrewTab() {
 
 // ── SETUP → START ─────────────────────────────────────────────────────────────
 function startEvent() {
-  const rawInput = (document.getElementById('ev-id-input').value || '').trim();
-  if (!rawInput) { setLoadStatus('Introduz o ID do evento'); return; }
-  // Accept C260780, P260449, or just 260780
-  const evId = rawInput.replace(/[^0-9]/g, '');
-  const evIdFull = rawInput.toUpperCase();
-  if (!evId) { setLoadStatus('Introduz o ID do evento'); return; }
-
-  // Save API key
-  var keyInput = document.getElementById('anthropic-key-input');
-  if (keyInput && keyInput.value.trim()) {
-    localStorage.setItem('ep-anthropic-key', keyInput.value.trim());
-  }
-  setLoadStatus('A carregar...');
-  // Always load context from pre-producao localStorage first
-  loadFromLocalStorage(evId, evIdFull);
-}
-
-function loadFromLocalStorage(evId, evIdFull) {
-  evIdFull = evIdFull || evId;
-  // Fallback: load from pre-producao localStorage
-  const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
-  const tl = JSON.parse(localStorage.getItem('ep-timeline') || '[]');
-
-  // Try to find project by cbEventId
-  // Match by full ID (C260780) or numeric (260780) or internal id
-  let p = projs.find(function(x){ return x.cbEventId && x.cbEventId.toUpperCase() === evIdFull; });
-  if (!p) p = projs.find(function(x){ return x.cbEventId && x.cbEventId.replace(/[^0-9]/g,'') === evId; });
-  if (!p) p = projs.find(function(x){ return String(x.id) === evId; });
-
-  const projTl = p ? tl.filter(function(t){ return String(t.projectId) === String(p.id); })
-    .sort(function(a,b){ return (a.time||'')>(b.time||'')?1:-1; })
-    .map(function(t){ return t.time + ' — ' + t.desc; }).join('\n') : '';
-
-  const team = p ? JSON.parse(localStorage.getItem('ep-proj-team-' + p.id) || '[]')
-    .map(function(m){ return m.name + (m.role?' — '+m.role:'') + (m.phone?' — '+m.phone:'') + (m.van?' ['+m.van+']':''); }).join('\n') : '';
-
   eventCtx = {
-    name: p ? p.name : 'Evento ' + evId,
-    venue: p ? (p.venue || '') : '',
-    date: p ? (p.date || '') : '',
-    timeline: projTl,
-    team: team,
-    protocols: p ? (p.protocols || '') : '',
-    cbId: p ? (p.cbEventId || evIdFull) : evIdFull,
-    projectId: p ? p.id : null
+    name: document.getElementById('ev-name').value.trim(),
+    venue: document.getElementById('ev-venue').value.trim(),
+    date: document.getElementById('ev-date').value.trim(),
+    timeline: document.getElementById('ev-timeline').value.trim(),
+    team: document.getElementById('ev-team').value.trim(),
+    protocols: document.getElementById('ev-protocols').value.trim(),
   };
 
-  // Validate cbId before saving
-  if (eventCtx.cbId && eventCtx.cbId.startsWith('http')) eventCtx.cbId = evIdFull;
-  localStorage.setItem('ep-copiloto-ctx', JSON.stringify(eventCtx));
-  setLoadStatus(p ? '✓ ' + p.name : '✓ Pronto');
-  setTimeout(function() {
-    showScreen('main');
-    initTimeline();
-    // Auto-sync with CrewBrain
-    syncCrewBrain();
-  }, 500);
-}
+  parseTimeline();
+  document.getElementById('header-event-name').textContent = eventCtx.name;
+  document.getElementById('screen-setup').classList.add('hidden');
+  document.getElementById('screen-main').classList.remove('hidden');
 
-function setLoadStatus(msg) {
-  var el = document.getElementById('ev-load-status');
-  if (el) el.textContent = msg;
+  updateSyncBar();
+  renderCrewTab();
+  startClock();
+  updateContextPill();
+  addWelcomeMessage();
+
+  // Auto-start VAD
+  setTimeout(startVAD, 400);
+
+  // Auto-refresh CrewBrain every 5 minutes
+  if (syncInterval) clearInterval(syncInterval);
+  syncInterval = setInterval(refreshCrewBrain, 5 * 60 * 1000);
 }
 
 function showSetup() {
@@ -718,21 +672,7 @@ function showSetup() {
   document.getElementById('screen-setup').classList.remove('hidden');
 }
 
-// ── SCREEN NAVIGATION ─────────────────────────────────────────────────────────
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(function(s) {
-    s.classList.add('hidden');
-  });
-  var target = document.getElementById('screen-' + id);
-  if (target) target.classList.remove('hidden');
-}
-
 // ── TIMELINE ──────────────────────────────────────────────────────────────────
-function initTimeline() {
-  parseTimeline();
-  if (typeof renderTimeline === 'function') renderTimeline();
-}
-
 function parseTimeline() {
   timelineItems = [];
   eventCtx.timeline.split('\n').filter(l => l.trim()).forEach(line => {
@@ -1048,7 +988,7 @@ async function sendToAI(userText) {
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': localStorage.getItem('ep-anthropic-key') || '', 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:buildSystemPrompt(), messages })
     });
     hideThinking();
@@ -1064,18 +1004,6 @@ async function sendToAI(userText) {
 function processAIResponse(text) {
   const logMatches = text.match(/\[REGISTO:\s*(.+?)\]/g);
   if (logMatches) logMatches.forEach(m => addToLog(m.replace(/\[REGISTO:\s*/,'').replace(/\]$/,'')));
-  // Send occurrences to pre-producao via postMessage
-  const occMatches = text.match(/\[OCORRENCIA:\s*({[\s\S]+?})\]/);
-  if (occMatches) {
-    try {
-      const payload = JSON.parse(occMatches[1]);
-      const msg = { source: 'copiloto-europalco', action: 'registarOcorrencia', payload: payload };
-      if (window.opener) window.opener.postMessage(msg, '*');
-      if (window.parent !== window) window.parent.postMessage(msg, '*');
-      addToLog('Ocorrência registada: ' + (payload.desc || ''));
-    } catch(e) { console.log('OCORRENCIA parse error', e); }
-  }
-
   const clean = text.replace(/\[REGISTO:\s*.+?\]/g,'').trim();
   addMessage('ai', clean||text);
   messages.push({ role:'assistant', content:text });
@@ -1162,24 +1090,38 @@ function addToLog(text) {
   div.innerHTML = `<div class="log-item-time">${timeStr}</div><div class="log-item-text">${text}</div><span class="log-item-tag">auto-registado</span>`;
   list.insertBefore(div, list.firstChild);
 }
+</script>
 
-document.addEventListener('DOMContentLoaded', function() {
-  loadProjectsFromStorage();
-  // Restore saved API key
-  var savedKey = localStorage.getItem('ep-anthropic-key');
-  if (savedKey) {
-    var keyInput = document.getElementById('anthropic-key-input');
-    if (keyInput) keyInput.value = savedKey;
-  }
-});
+<!-- iOS Install Banner -->
+<div id="ios-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:14px 16px 32px;background:#fff;border-top:1px solid rgba(0,0,0,0.1);box-shadow:0 -4px 20px rgba(0,0,0,0.08);">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <img src="icons/icon-180.png" style="width:44px;height:44px;border-radius:10px;flex-shrink:0">
+    <div style="flex:1">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#111;margin-bottom:3px">Instalar Co-piloto</div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:rgba(17,17,17,0.55);line-height:1.5">
+        Toca em <strong style="color:#111">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin:0 1px">
+            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          Partilhar</strong> e depois em <strong style="color:#111">Adicionar ao ecrã principal</strong>
+      </div>
+    </div>
+    <button onclick="document.getElementById('ios-banner').style.display='none';localStorage.setItem('pwa-dismissed','1')" style="background:none;border:none;font-family:'DM Mono',monospace;font-size:18px;color:rgba(17,17,17,0.35);cursor:pointer;padding:0;line-height:1;flex-shrink:0">×</button>
+  </div>
+</div>
 
-// Periodic sync every 30 minutes when event is active
-setInterval(function() {
-  var mainScreen = document.getElementById('screen-main');
-  if (mainScreen && !mainScreen.classList.contains('hidden')) {
-    syncCrewBrain();
+<script>
+// Show iOS install banner if not already installed and not dismissed
+(function() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('pwa-dismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    setTimeout(() => {
+      document.getElementById('ios-banner').style.display = 'block';
+    }, 3000);
   }
-}, 30 * 60 * 1000);
+})();
 </script>
 </body>
 </html>
