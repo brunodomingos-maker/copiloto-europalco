@@ -1739,6 +1739,11 @@ function renderProjectDetail(projectId) {
     // Direct button listeners
     var btnSync = document.getElementById('btn-sync-team');
     if (btnSync) btnSync.addEventListener('click', function() { syncTeamFromCB(p.id); });
+
+    // Auto-sync team from CrewBrain if project has cbEventId and proxy configured
+    if (p.cbEventId && localStorage.getItem('ep-gas-proxy-url')) {
+      syncTeamFromCB(p.id);
+    }
   });
 }
 
