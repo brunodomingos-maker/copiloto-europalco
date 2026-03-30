@@ -404,51 +404,72 @@ function onProjSelect(projId) {
 }
 
 async function syncCrewBrain() {
-  const eventId = getCBEventId();
-  const auth = document.getElementById('cb-auth').value.trim();
-  if (!eventId || !auth) {
-    setCBStatus('err', 'Preenche Event ID e credenciais');
-    return;
-  }
+  const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
+  if (!proxyUrl) { setCBStatus('err', 'Proxy não configurado'); return; }
+
+  // Get event ID from context or stored
+  const cbId = (eventCtx && eventCtx.cbId) ? String(eventCtx.cbId) : '';
+  if (!cbId) { setCBStatus('err', 'Sem Event ID'); return; }
 
   setCBStatus('loading', 'A sincronizar...');
   try {
-    // Fetch staff/resources for this event
-    const staffRes = await fetch(`${getCBBase()}/events/${eventId}/resources/allNamesInEvent`, {
-      headers: getCBHeaders()
-    });
+    // Step 1: Search for internal EventID by EventIDManual
+    const searchRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/events?search=' + cbId + '&limit=5'));
+    if (!searchRes.ok) throw new Error('Proxy error');
+    const searchData = await searchRes.json();
+    const events = (searchData.data && searchData.data.data) || [];
+    const event = events.find(function(e){ return e.EventIDManual && e.EventIDManual.toUpperCase() === cbId.toUpperCase(); }) || events[0];
+    if (!event) throw new Error('Evento ' + cbId + ' não encontrado');
 
-    if (!staffRes.ok) throw new Error(`Erro ${staffRes.status}`);
+    const internalId = event.EventID;
+
+    // Step 2: Get staff
+    const staffRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/events/' + internalId + '/resources/allNamesInEvent'));
+    if (!staffRes.ok) throw new Error('Staff error');
     const staffData = await staffRes.json();
+    const rawStaff = (staffData.data && Array.isArray(staffData.data)) ? staffData.data
+      : (staffData.data && staffData.data.data) ? staffData.data.data : [];
 
-    // Parse staff — CrewBrain returns array of resource objects
-    crewData.staff = parseCrewBrainStaff(staffData);
+    // Step 3: Get staff details (phone numbers) from staff pool
+    const allStaffRes = await fetch(proxyUrl + '?path=' + encodeURIComponent('/staff?limit=500'));
+    const allStaffData = allStaffRes.ok ? await allStaffRes.json() : null;
+    const staffPool = (allStaffData && allStaffData.data && allStaffData.data.data) || [];
+    const phoneMap = {};
+    staffPool.forEach(function(s){ if(s.ID) phoneMap[s.ID] = s.Phone || ''; });
 
-    // Try to fetch transports (vehicles) — endpoint may vary
-    try {
-      const transRes = await fetch(`${getCBBase()}/events/${eventId}/transports`, {
-        headers: getCBHeaders()
-      });
-      if (transRes.ok) {
-        const transData = await transRes.json();
-        crewData.transports = parseCrewBrainTransports(transData);
-      }
-    } catch(e) {
-      crewData.transports = [];
-    }
+    // Build staff list with phone numbers
+    crewData.staff = rawStaff.map(function(s) {
+      const phone = phoneMap[s.AssignmentID] || s.FreeEmployeePhone || '';
+      return {
+        name: s.Name || '',
+        role: '',
+        phone: phone,
+        status: s.Assignment === 'EMPLOYEE' ? 'confirmed' : 'pending',
+        callTime: '',
+        id: s.AssignmentID
+      };
+    }).filter(function(s){ return s.name; });
+
+    // Step 4: Get vehicles from project team (localStorage)
+    const projTeam = JSON.parse(localStorage.getItem('ep-proj-team-' + (eventCtx.projectId || '')) || '[]');
+    crewData.transports = projTeam
+      .filter(function(m){ return m.van && m.van.trim(); })
+      .map(function(m){ return { name: m.van, driver: m.name, departure: '', origin: '', passengers: [] }; });
 
     crewData.synced = true;
     crewData.lastSync = new Date();
-    const timeStr = `${String(crewData.lastSync.getHours()).padStart(2,'0')}:${String(crewData.lastSync.getMinutes()).padStart(2,'0')}`;
-    setCBStatus('ok', `Sincronizado às ${timeStr} — ${crewData.staff.length} pessoas`);
 
-    // Auto-fill team field from CrewBrain data
-    const teamText = crewData.staff.map(s => `${s.name} — ${s.role}${s.phone ? ' — ' + s.phone : ''}`).join('\n');
-    if (teamText) document.getElementById('ev-team').value = teamText;
+    const confirmed = crewData.staff.filter(function(s){ return s.status === 'confirmed'; }).length;
+    setCBStatus('ok', 'CrewBrain · sync ' + 
+      String(crewData.lastSync.getHours()).padStart(2,'0') + ':' + 
+      String(crewData.lastSync.getMinutes()).padStart(2,'0'));
+    
+    // Show notification in chat
+    addMessage('system', '↻ CrewBrain actualizado — ' + confirmed + ' confirmados, ' + crewData.transports.length + ' viaturas');
 
   } catch(e) {
-    // Demo mode: simulate realistic CrewBrain data
-    simulateCrewBrainData();
+    setCBStatus('err', 'Erro: ' + e.message);
+    console.error('syncCrewBrain:', e);
   }
 }
 
@@ -655,7 +676,9 @@ function loadFromLocalStorage(evId, evIdFull) {
     date: p ? (p.date || '') : '',
     timeline: projTl,
     team: team,
-    protocols: p ? (p.protocols || '') : ''
+    protocols: p ? (p.protocols || '') : '',
+    cbId: p ? (p.cbEventId || evIdFull) : evIdFull,
+    projectId: p ? p.id : null
   };
 
   localStorage.setItem('ep-copiloto-ctx', JSON.stringify(eventCtx));
@@ -663,6 +686,8 @@ function loadFromLocalStorage(evId, evIdFull) {
   setTimeout(function() {
     showScreen('main');
     initTimeline();
+    // Auto-sync with CrewBrain
+    syncCrewBrain();
   }, 500);
 }
 
@@ -1125,6 +1150,14 @@ function addToLog(text) {
 }
 
 document.addEventListener('DOMContentLoaded', loadProjectsFromStorage);
+
+// Periodic sync every 30 minutes when event is active
+setInterval(function() {
+  var mainScreen = document.getElementById('screen-main');
+  if (mainScreen && !mainScreen.classList.contains('hidden')) {
+    syncCrewBrain();
+  }
+}, 30 * 60 * 1000);
 </script>
 </body>
 </html>
