@@ -2407,7 +2407,7 @@ window._processExcelRows = function(rows, pid) {
   if (people.length === 0) { notify('Nenhum técnico encontrado no ficheiro'); return; }
 
   // Merge with existing team
-  var team = getProjectTeam(projectId);
+  var team = getProjectTeam(pid);
   var existingNames = new Set(team.map(function(m){ return m.name.toLowerCase(); }));
   var added = 0;
   people.forEach(function(p) {
