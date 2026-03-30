@@ -455,7 +455,17 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .occ-form textarea { width: 100%; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; font-family: var(--sans); font-size: 12px; color: var(--text); outline: none; resize: vertical; min-height: 60px; line-height: 1.5; margin-bottom: 8px; }
 .occ-form textarea:focus { border-color: var(--ym); }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+// ── GLOBAL PROJECT BUTTON HANDLER ────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('button[data-pid]');
+  if (!btn) return;
+  var pid = Number(btn.dataset.pid);
+  var action = btn.dataset.act;
+  if (action === 'sync')   syncTeamFromCB(pid);
+  if (action === 'import') importEquipaExcel(pid);
+});
+</script>
 </head>
 <body>
 <div class="app">
@@ -1714,7 +1724,7 @@ function renderProjectDetail(projectId) {
     <div style="margin-top:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="section-title" style="margin-bottom:0">Equipa destacada (${getProjectTeam(p.id).length})</div>
-        <button id="btn-sync-team" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button><button id="btn-import-excel" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer;margin-left:6px">⬆ Importar Excel</button>
+        <button data-pid="${p.id}" data-act="sync" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button><button data-pid="${p.id}" data-act="import" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer;margin-left:6px">⬆ Importar Excel</button>
       </div>
       <div class="proj-team-grid" id="proj-team-${p.id}">
         ${renderProjectTeamHTML(p.id)}
@@ -1738,10 +1748,7 @@ function renderProjectDetail(projectId) {
     renderOccList(p.id);
 
     // Direct button listeners
-    var btnSync = document.getElementById('btn-sync-team');
-    if (btnSync) btnSync.addEventListener('click', function() { syncTeamFromCB(p.id); });
-    var btnImport = document.getElementById('btn-import-excel');
-    if (btnImport) btnImport.addEventListener('click', function() { importEquipaExcel(p.id); });
+    // buttons use direct onclick
 
     // Auto-sync team from CrewBrain if project has cbEventId and proxy configured
     if (p.cbEventId && localStorage.getItem('ep-gas-proxy-url')) {
