@@ -3696,26 +3696,4 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 </body>
-</html>};
-
-window.importEquipaExcel = function(projectId) {
-  var input = document.getElementById('excel-import-input');
-  if (!input) return;
-  input.value = '';
-  window._importPid = projectId;
-  input.onchange = function(e) {
-    var pid = window._importPid || projectId;
-    var file = e.target.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(ev) {
-      try {
-        var data = new Uint8Array(ev.target.result);
-        var wb = XLSX.read(data, {type: 'array'});
-        var ws = wb.Sheets[wb.SheetNames[0]];
-        var rows = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ''});
-        window._processExcelRows(rows, pid);
-      } catch(err) {
-        notify('Erro ao ler ficheiro: ' + err.message);
-      }
-    
+</html>
