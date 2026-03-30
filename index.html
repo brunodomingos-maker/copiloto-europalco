@@ -194,7 +194,7 @@
     <div id="ev-load-status" style="font-family:var(--mono);font-size:10px;color:rgba(255,255,255,0.35);text-align:center;min-height:16px;margin-bottom:16px"></div>
     <div style="margin-bottom:12px">
       <input id="anthropic-key-input" type="password" class="field-input"
-        placeholder="Anthropic API Key (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)"
+        placeholder="Anthropic API Key (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)"
         style="font-size:12px;letter-spacing:0.02em"
         value="">
       <div style="font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.25);margin-top:4px;text-align:center">Guardada apenas no teu browser · nunca enviada a terceiros</div>
@@ -415,8 +415,16 @@ async function syncCrewBrain() {
   if (!proxyUrl) { setCBStatus('err', 'Proxy não configurado'); return; }
 
   // Get event ID from context or stored
-  const cbId = (eventCtx && eventCtx.cbId) ? String(eventCtx.cbId) : '';
-  if (!cbId) { setCBStatus('err', 'Sem Event ID'); return; }
+  // Get cbId from eventCtx, validate it looks like an event ID (not a URL)
+  let cbId = (eventCtx && eventCtx.cbId) ? String(eventCtx.cbId) : '';
+  if (!cbId || cbId.startsWith('http') || cbId.length > 20) {
+    // Try to get from localStorage projects directly
+    const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
+    const proj = projs.find(function(p){ return p.cbEventId && !p.cbEventId.startsWith('http'); });
+    cbId = proj ? proj.cbEventId : '';
+  }
+  if (!cbId) { setCBStatus('err', 'Sem Event ID válido'); return; }
+  cbId = cbId.trim();
 
   setCBStatus('loading', 'A sincronizar...');
   try {
@@ -685,6 +693,8 @@ function loadFromLocalStorage(evId, evIdFull) {
     projectId: p ? p.id : null
   };
 
+  // Validate cbId before saving
+  if (eventCtx.cbId && eventCtx.cbId.startsWith('http')) eventCtx.cbId = evIdFull;
   localStorage.setItem('ep-copiloto-ctx', JSON.stringify(eventCtx));
   setLoadStatus(p ? '✓ ' + p.name : '✓ Pronto');
   setTimeout(function() {
