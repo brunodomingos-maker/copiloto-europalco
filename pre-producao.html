@@ -469,6 +469,7 @@ document.addEventListener('click', function(e) {
     var idx = Number(btn.dataset.idx);
     removeTecnicoFromProject(pid, idx);
   }
+  if (action === 'add-tecnico') addTecnicoToProject(pid);
 });
 </script>
 </head>
@@ -1748,7 +1749,7 @@ function renderProjectDetail(projectId) {
           <option value="">+ Adicionar técnico manualmente...</option>
           ${getTecnicosNotInProject(p.id).map(t => '<option value="' + t.id + '">' + t.name + ' — ' + (t.role||'—') + '</option>').join('')}
         </select>
-        <button class="team-add-btn" data-action="add-tecnico" data-project="${p.id}">Adicionar</button>
+        <button class="team-add-btn" data-pid="${p.id}" data-act="add-tecnico">Adicionar</button>
       </div>
     </div>
   `;
