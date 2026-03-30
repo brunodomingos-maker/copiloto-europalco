@@ -458,12 +458,13 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
 // ── GLOBAL PROJECT BUTTON HANDLER ────────────────────────────────────────────
 document.addEventListener('click', function(e) {
-  var btn = e.target.closest('button[data-pid]');
+  var btn = e.target.closest('[data-pid]');
   if (!btn) return;
   var pid = Number(btn.dataset.pid);
   var action = btn.dataset.act;
-  if (action === 'sync')   syncTeamFromCB(pid);
-  if (action === 'import') importEquipaExcel(pid);
+  if (action === 'sync')        syncTeamFromCB(pid);
+  if (action === 'import')      importEquipaExcel(pid);
+  if (action === 'import-label') { window._importPid = pid; }
 });
 </script>
 </head>
@@ -1724,8 +1725,20 @@ function renderProjectDetail(projectId) {
     <div style="margin-top:20px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="section-title" style="margin-bottom:0">Equipa destacada (${getProjectTeam(p.id).length})</div>
-        <button data-pid="${p.id}" data-act="sync" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button><button data-pid="${p.id}" data-act="import" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer;margin-left:6px">⬆ Importar Excel</button>
+        <button data-pid="${p.id}" data-act="sync" style="padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:10px;color:var(--dim);cursor:pointer">↻ Sync CrewBrain</button>
       </div>
+      <label for="excel-import-input" data-pid="${p.id}" data-act="import-label"
+        style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+               border:1.5px dashed var(--border2);border-radius:10px;padding:16px 12px;
+               cursor:pointer;transition:all 0.15s;margin-bottom:12px;background:var(--bg)"
+        id="excel-drop-zone"
+        ondragover="event.preventDefault();this.style.borderColor='var(--ym)';this.style.background='rgba(242,194,0,0.04)'"
+        ondragleave="this.style.borderColor='';this.style.background=''"
+        ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';window._importPid=${p.id};var f=event.dataTransfer.files[0];if(f){var inp=document.getElementById('excel-import-input');inp.value='';window._importPid=${p.id};var dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;inp.dispatchEvent(new Event('change'));}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--dim)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">Arrastar Excel aqui ou <span style="color:var(--yd);text-decoration:underline">seleccionar ficheiro</span></span>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--dim);opacity:0.6">Personnel Plan exportado do CrewBrain (.xlsx)</span>
+      </label>
       <div class="proj-team-grid" id="proj-team-${p.id}">
         ${renderProjectTeamHTML(p.id)}
       </div>
@@ -2344,7 +2357,9 @@ window.deleteTecnicoFromGrid = deleteTecnicoFromGrid;
 window.importEquipaExcel = function(projectId) {
   var input = document.getElementById('excel-import-input');
   input.value = '';
+  window._importPid = projectId;
   input.onchange = function(e) {
+    var pid = window._importPid || projectId;
     var file = e.target.files[0];
     if (!file) return;
     var reader = new FileReader();
@@ -2400,9 +2415,9 @@ window.importEquipaExcel = function(projectId) {
             added++;
           }
         });
-        saveProjectTeam(projectId, team);
-        var el = document.getElementById('proj-team-' + projectId);
-        if (el) el.innerHTML = renderProjectTeamHTML(projectId);
+        saveProjectTeam(pid, team);
+        var el = document.getElementById('proj-team-' + pid);
+        if (el) el.innerHTML = renderProjectTeamHTML(pid);
         notify('✓ ' + added + ' técnicos importados do Excel (' + people.length + ' no ficheiro)');
       } catch(err) {
         notify('Erro ao ler ficheiro: ' + err.message);
