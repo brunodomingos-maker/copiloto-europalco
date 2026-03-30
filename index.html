@@ -617,71 +617,28 @@ function renderCrewTab() {
 
 // ── SETUP → START ─────────────────────────────────────────────────────────────
 function startEvent() {
-  const evId = (document.getElementById('ev-id-input').value || '').trim().replace(/[^0-9]/g, '');
+  const rawInput = (document.getElementById('ev-id-input').value || '').trim();
+  if (!rawInput) { setLoadStatus('Introduz o ID do evento'); return; }
+  // Accept C260780, P260449, or just 260780
+  const evId = rawInput.replace(/[^0-9]/g, '');
+  const evIdFull = rawInput.toUpperCase();
   if (!evId) { setLoadStatus('Introduz o ID do evento'); return; }
 
   setLoadStatus('A carregar...');
-
-  const proxyUrl = localStorage.getItem('ep-gas-proxy-url');
-  if (!proxyUrl) {
-    // No proxy — try localStorage from pre-producao
-    loadFromLocalStorage(evId);
-    return;
-  }
-
-  // Load from CrewBrain via proxy
-  Promise.all([
-    fetch(proxyUrl + '?path=' + encodeURIComponent('/events/' + evId + '/resources/allNamesInEvent')).then(function(r){ return r.json(); }).catch(function(){ return null; }),
-    fetch(proxyUrl + '?path=' + encodeURIComponent('/events/' + evId + '/headInfo')).then(function(r){ return r.json(); }).catch(function(){ return null; })
-  ]).then(function(results) {
-    const staffData = results[0];
-    const headData = results[1];
-
-    // Parse head info
-    const head = headData && headData.data ? headData.data : {};
-    const staffList = staffData && staffData.data ? (staffData.data.data || staffData.data || []) : [];
-
-    const teamStr = staffList.map(function(s) {
-      const name = s.FullName || s.fullName || ((s.Firstname||'') + ' ' + (s.Lastname||'')).trim();
-      const role = s.Function || s.role || '';
-      const phone = s.Phone || s.phone || '';
-      return name + (role ? ' — ' + role : '') + (phone ? ' — ' + phone : '');
-    }).join('\n');
-
-    // Try to get timeline from localStorage
-    const allTl = JSON.parse(localStorage.getItem('ep-timeline') || '[]');
-    const projId = localStorage.getItem('ep-cb-eventid');
-    const tl = allTl.filter(function(t){ return String(t.projectId) === String(projId); })
-      .sort(function(a,b){ return (a.time||'')>(b.time||'')?1:-1; })
-      .map(function(t){ return t.time + ' — ' + t.desc; }).join('\n');
-
-    eventCtx = {
-      name: head.Title || head.name || 'Evento ' + evId,
-      venue: (head.Location && head.Location.Name) || head.venue || '',
-      date: head.StartDate ? head.StartDate.substring(0,10) : '',
-      timeline: tl || '',
-      team: teamStr,
-      protocols: ''
-    };
-
-    localStorage.setItem('ep-copiloto-ctx', JSON.stringify(eventCtx));
-    setLoadStatus('✓ ' + staffList.length + ' técnicos carregados');
-    setTimeout(function() {
-      showScreen('main');
-      initTimeline();
-    }, 600);
-  }).catch(function(e) {
-    loadFromLocalStorage(evId);
-  });
+  // Always load context from pre-producao localStorage first
+  loadFromLocalStorage(evId, evIdFull);
 }
 
-function loadFromLocalStorage(evId) {
+function loadFromLocalStorage(evId, evIdFull) {
+  evIdFull = evIdFull || evId;
   // Fallback: load from pre-producao localStorage
   const projs = JSON.parse(localStorage.getItem('ep-projects') || '[]');
   const tl = JSON.parse(localStorage.getItem('ep-timeline') || '[]');
 
   // Try to find project by cbEventId
-  let p = projs.find(function(x){ return x.cbEventId && x.cbEventId.replace(/[^0-9]/g,'') === evId; });
+  // Match by full ID (C260780) or numeric (260780) or internal id
+  let p = projs.find(function(x){ return x.cbEventId && x.cbEventId.toUpperCase() === evIdFull; });
+  if (!p) p = projs.find(function(x){ return x.cbEventId && x.cbEventId.replace(/[^0-9]/g,'') === evId; });
   if (!p) p = projs.find(function(x){ return String(x.id) === evId; });
 
   const projTl = p ? tl.filter(function(t){ return String(t.projectId) === String(p.id); })
