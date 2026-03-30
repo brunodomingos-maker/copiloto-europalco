@@ -544,6 +544,7 @@ function simulateCrewBrainData() {
 function setCBStatus(type, text) {
   const dot = document.getElementById('cb-status-dot');
   const txt = document.getElementById('cb-status-text');
+  if (!dot || !txt) return;
   dot.style.background = type === 'ok' ? '#1E7A4A' : type === 'err' ? '#C0392B' : '#8A6E00';
   dot.style.boxShadow = type === 'ok' ? '0 0 6px rgba(30,122,74,0.4)' : 'none';
   if (type === 'loading') dot.style.animation = 'blink 1s ease-in-out infinite';
@@ -563,16 +564,7 @@ function updateSyncBar() {
 }
 
 async function refreshCrewBrain() {
-  if (!getCBEventId() || !document.getElementById('cb-auth').value.trim()) {
-    // If in demo mode, refresh demo data
-    if (crewData.synced) { simulateCrewBrainData(); updateSyncBar(); renderCrewTab(); return; }
-    return;
-  }
-  const dot = document.getElementById('sync-dot');
-  dot.className = 'sync-dot loading';
-  await syncCrewBrain();
-  updateSyncBar();
-  renderCrewTab();
+  syncCrewBrain();
 }
 
 // ── CREW TAB RENDERING ────────────────────────────────────────────────────────
