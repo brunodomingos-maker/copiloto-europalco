@@ -465,6 +465,10 @@ document.addEventListener('click', function(e) {
   if (action === 'sync')        syncTeamFromCB(pid);
   if (action === 'import')      importEquipaExcel(pid);
   if (action === 'import-label') { window._importPid = pid; }
+  if (action === 'remove-member') {
+    var idx = Number(btn.dataset.idx);
+    removeTecnicoFromProject(pid, idx);
+  }
 });
 </script>
 </head>
@@ -1864,7 +1868,7 @@ function renderProjectTeamHTML(projectId) {
         title="${hasVan?'Viatura: '+m.van:'Clicar para atribuir viatura'}">
         ${hasVan ? '🚐 ' + m.van : '+ viatura'}
       </span>
-      <button class="proj-team-remove" onclick="removeTecnicoFromProject(${projectId},${i})" title="Remover">×</button>
+      <button class="proj-team-remove" data-pid="${projectId}" data-act="remove-member" data-idx="${i}" title="Remover">×</button>
     </div>`;
   }).join('');
 }
