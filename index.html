@@ -688,6 +688,11 @@ function showScreen(id) {
 }
 
 // ── TIMELINE ──────────────────────────────────────────────────────────────────
+function initTimeline() {
+  parseTimeline();
+  if (typeof renderTimeline === 'function') renderTimeline();
+}
+
 function parseTimeline() {
   timelineItems = [];
   eventCtx.timeline.split('\n').filter(l => l.trim()).forEach(line => {
