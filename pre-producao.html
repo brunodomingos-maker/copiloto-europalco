@@ -2998,7 +2998,7 @@ function tecnicoCard(t) {
   const certsHtml = (t.certs||[]).map(c => `<span class="cert-tag">${c}</span>`).join('');
 
   return `<div class="tecnico-card" id="tcard-${t.id}" onclick="openModal(${JSON.stringify(t.id)})" style="cursor:pointer">
-    <div style="padding:14px 16px;display:flex;align-items:flex-start;gap:12px;background:${deptClr.bg};border-radius:12px 12px 0 0">
+    <div style="padding:14px 16px;display:flex;align-items:flex-start;gap:12px;background:${deptClr.bg};border-radius:12px 12px 0 0;min-height:80px">
       <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--sans);font-weight:700;font-size:14px;flex-shrink:0;background:${avatarBg};color:${deptClr.text}">${initials}</div>
       <div style="flex:1;min-width:0">
   <div style="font-family:var(--sans);font-size:14px;font-weight:700;color:${nameColor};line-height:1.25;margin-bottom:2px">${t.name}</div>
