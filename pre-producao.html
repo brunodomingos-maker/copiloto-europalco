@@ -1731,7 +1731,7 @@ function renderProjectDetail(projectId) {
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div class="section-title" style="margin-bottom:0">Equipa destacada (${getProjectTeam(p.id).length})</div>
       </div>
-      <label for="excel-import-input" data-pid="${p.id}" data-act="import-label"
+      <div data-pid="${p.id}" data-act="import"
         id="excel-drop-zone"
         style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--border2);border-radius:10px;padding:16px 12px;cursor:pointer;transition:all 0.15s;margin-bottom:12px;background:var(--bg)"
         ondragover="event.preventDefault();this.style.borderColor='var(--ym)';this.style.background='rgba(242,194,0,0.04)'"
@@ -1740,7 +1740,7 @@ function renderProjectDetail(projectId) {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--dim)"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         <span style="font-family:var(--mono);font-size:10px;color:var(--dim)">Arrastar Excel aqui ou <span style="color:var(--yd);text-decoration:underline">seleccionar ficheiro</span></span>
         <span style="font-family:var(--mono);font-size:9px;color:var(--dim);opacity:0.6">Personnel Plan exportado do CrewBrain (.xlsx)</span>
-      </label>
+      </div>
       <div class="proj-team-grid" id="proj-team-${p.id}">
         ${renderProjectTeamHTML(p.id)}
       </div>
