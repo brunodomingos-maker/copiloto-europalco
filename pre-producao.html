@@ -1764,10 +1764,7 @@ function renderProjectDetail(projectId) {
     // Direct button listeners
     // buttons use direct onclick
 
-    // Auto-sync team from CrewBrain if project has cbEventId and proxy configured
-    if (p.cbEventId && localStorage.getItem('ep-gas-proxy-url')) {
-      syncTeamFromCB(p.id);
-    }
+
   });
 }
 
